@@ -3,7 +3,7 @@
 "*py*" pour Python et "*scape*" pour escape, ou "escape sequence" (voir `src/escape_sequences.py`)
 ## Prévu
 - [ ] Système de dialogue
-- [ ] Boutons fonctionnelles
+- [ ] Boutons fonctionnels
 - [ ] Simulation de fluides
 - [ ] Simulation de tissu (apparamment assez simple)
 - [ ] Calculatrice complète
@@ -12,7 +12,7 @@
 
 ### Propositions
 - Outil de bureautique (tableur, traitement de texte) ?
-- 	Un module qui raconterait l'histoire des terminaux sous forme de "vidéo" interactive et animée directement dans le terminal
+- Un module qui raconterait l'histoire des terminaux sous forme de "vidéo" interactive et animée directement dans le terminal
 
 # Lancement
 Il suffit de lancer `main.py` dans le dossier `src/` avec
