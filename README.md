@@ -1,4 +1,4 @@
-# Pyscape - Trophé NSI 2025
+# Pyscape - Trophée NSI 2025
 #### (proposition **temporaire** de nom)
 "*py*" pour Python et "*scape*" pour escape, ou "escape sequence" (voir `src/escape_sequences.py`)
 ## Prévu
