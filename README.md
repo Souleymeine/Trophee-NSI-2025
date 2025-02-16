@@ -15,7 +15,14 @@
 - 	Un module qui raconterait l'histoire des terminaux sous forme de "vidéo" interactive et animée directement dans le terminal
 
 # Lancement
-Il suffit de lancer `main.py` dans le dossier `src/`.
+Il suffit de lancer `main.py` dans le dossier `src/` avec
+
+	python -OO src/main.py
+
+si le chemin de python est ajouté au PATH, sinon remplacer par le chemin absolu ou relatif de python.
+
+On notera l'option -OO pour "**O**ptimization", qui pourrait être utile pour ce programme.
+
 Aucune dépendance n'est requise si ce n'est python lui-même et une machine Windows **10 à jour** (pas de version antiérieure) , Linux, MacOS, BSD ou n'importe quel autre système POSIX.
 
 ---
