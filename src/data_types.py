@@ -1,12 +1,10 @@
 #Projet : pyscape
-#Auteurs : Rabta Souleymeine
+#Auteurs : Rabta Souleymeine, Benhassine Jilan
 
 #Annotations permet de faire référence à une classe directement dans ses méthodes, il va remplacer le type par un string type : 'Vec3', 
 #Puis Python fait le taff pour interpréter tous ça !
 from __future__ import annotations 
-
 from dataclasses import dataclass
-
 import math
 
 
