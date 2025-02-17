@@ -6,8 +6,8 @@
 ## Sources principales :
 # - Séquence d'échappement ANSI : https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
 
-from enum import Enum
 import sys
+from enum import Enum
 from data_types import RGB, Vec2d
 from typing import Final
 

@@ -5,7 +5,6 @@ import warnings
 from typing import Final
 from escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
 from data_types import RGB, Anchor, Vec2d
-from typing import Final
 
 # Historiquement, ces caractères ont été inventé pour afficher des bordures des 
 # éléments d'interface directement dans le terminale, à la manière de l'ASCII art.

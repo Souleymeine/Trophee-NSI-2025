@@ -1,11 +1,11 @@
 #Projet : pyscape
 #Auteurs : Rabta Souleymeine
 
+import warnings
 from typing import Final
 from TUI_elements.box import Box
 from data_types import Alignment, HorizontalAlignment, Vec2d, VerticalAlignment
-from escape_sequences import ANSI_Styles, print_at, print_styled_at
-import warnings
+from escape_sequences import ANSI_Styles, print_styled_at
 
 # TODO : Les textes ne retournent pas à la ligne...
 class TextArea():
@@ -33,7 +33,7 @@ class TextArea():
 			case HorizontalAlignment.CENTER: first_char_coord.x = int(box_top_left_coord.x + self.box.dimentions.x / 2 - len(self.text)/2)
 			case HorizontalAlignment.RIGHT:  first_char_coord.x = box_top_left_coord.x + self.box.dimentions.y - len(self.text) - 1
 		match self.alignment.vertical:
-			case VerticalAlignment.TOP:	first_char_coord.y = box_top_left_coord.y + 1
+			case VerticalAlignment.TOP:    first_char_coord.y = box_top_left_coord.y + 1
 			case VerticalAlignment.MIDDLE: first_char_coord.y = int(box_top_left_coord.y + self.box.dimentions.y / 2)
 			case VerticalAlignment.BOTTOM: first_char_coord.y = box_top_left_coord.y + self.box.dimentions.y - 2
 		
