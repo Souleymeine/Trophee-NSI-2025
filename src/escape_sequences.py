@@ -79,7 +79,7 @@ def print_styled(string: str, style: ANSI_Styles):
 def print_styled_at(string: str, style: ANSI_Styles, coord: Vec2d):
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
 	assert coord.y >= 1, f"y doit être supérieur ou égale à 1: {coord.y}"
-	print(f"{CSI}{coord.y};{coord.x}H{CSI}{style._value_}m{string}")
+	print(f"{CSI}{coord.y};{coord.x}H{CSI}{style._value_}m{string}{CSI}m")
 
 # === Couleurs =======================================
 
