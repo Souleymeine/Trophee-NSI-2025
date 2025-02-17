@@ -175,7 +175,7 @@ class Vec3d:
 		return v / norm
 
 	@staticmethod
-	def cross(v1: "Vec3d", v2: "Vec3d") -> "Vec3d":
+	def cross(v1: "Vec3d", v2: Vec3d) -> Vec3d:
 		"""Calcule le produit vectoriel (cross product) entre deux vecteurs en 3D.
 
 		Le produit vectoriel de deux vecteurs A et B donne un troisième vecteur C,
