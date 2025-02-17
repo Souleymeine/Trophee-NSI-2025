@@ -27,14 +27,6 @@ class Vec2d:
 
 class Vec3d:
 	def __init__(self,x : int,y :int ,z: int):
-		"""Initialise un vecteur en 3D.
-
-        Args:
-            x (float) : Coordonnée X du vecteur.
-            y (float) : Coordonnée Y du vecteur.
-            z (float) : Coordonnée Z du vecteur.
-
-        """
 		self.x = x
 		self.y = y
 		self.z = z
