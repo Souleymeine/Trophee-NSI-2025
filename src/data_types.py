@@ -160,7 +160,7 @@ class Vec3d:
 		norm = v.norm()
 		if norm == 0:
 			raise ZeroDivisionError("Impossible de normaliser un vecteur nul.")
-		return v / norm
+		return v.__div__(norm)
 
 	@staticmethod
 	def cross(v1: "Vec3d", v2: Vec3d) -> Vec3d:
