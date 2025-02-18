@@ -26,7 +26,7 @@ class Vec2d:
 
 
 class Vec3d:
-	def __init__(self,x : int,y :int ,z: int):
+	def __init__(self, x: int, y: int, z: int):
 		self.x = x
 		self.y = y
 		self.z = z
@@ -45,7 +45,7 @@ class Vec3d:
 		if isinstance(other, Vec3d):
 			return Vec3d(self.x + other.x, self.y + other.y, self.z + other.z) # Addition avec un Vec3d
 		elif isinstance(other, (int, float)):  # Addition avec un scalaire (Donc pas un Vec3d)
-			return Vec3d(self.x + other, self.y + other, self.z + other)
+			return Vec3d(self.x + int(other), self.y + int(other), self.z + int(other))
 		return NotImplemented  # Permet à Python d'essayer __radd__
 
 	# NOTE: La méthode __radd__ est un peu spéciale. Elle permet de faire des opérations dans l'autre sens
@@ -128,7 +128,7 @@ class Vec3d:
 			_type_: La divison de 2 Vec3 entre eux
 		"""
 		if isinstance(other, Vec3d):
-			return Vec3d(self.x / other.x, self.y / other.y, self.z / other.z)
+			return Vec3d(int(self.x / other.x), int(self.y / other.y), int(self.z / other.z))
 		else:
 			return Vec3d(self.x / other, self.y / other, self.z / other)
 	
@@ -235,19 +235,6 @@ class Vec3d:
 		"""
 		return math.sqrt(Vec3d.dot(self,self))
 	
-	@staticmethod
-	def normalize(v):
-		"""_summary_
-
-		Args:
-			v (_type_): _description_
-
-		Returns:
-			_type_: _description_
-		"""
-		return v / v.norm()
-		
-
 from enum import Enum
 
 class Anchor(Enum):
