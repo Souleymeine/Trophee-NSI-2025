@@ -18,6 +18,16 @@ class TextArea():
 		if (len(text) > box.dimentions.x - 2):
 			warnings.warn(f"Warning: Text trop grand pour rentrer dans la la largeur: {len(text)} > {box.dimentions.x - 2} (on ne compte pas les bordures)")
 	
+
+	def wrapped_text(self) -> str:
+		MAX_LENGTH = self.box.dimentions.x - 2 # 2 représente les deux charactères servant de bordure
+
+		current_line_length = 0
+		wrapped_text: str = ""
+		for word in self.text.split():
+			if current_line_length + len(word) > MAX_LENGTH:
+			
+
 	def draw(self):
 		self.box.draw()
 

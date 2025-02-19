@@ -11,7 +11,7 @@ from TUI_elements.box import Box
 from TUI_elements.text_area import TextArea
 from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Vec2d, VerticalAlignment
 from dialog_printing import print_sized_dialog
-from escape_sequences import get_bgcolor, gohome, goto, ANSI_Styles
+from escape_sequences import cat_bgcolor, gohome, goto, ANSI_Styles
 from terminal import*
 
 # Petit test assez sympa
@@ -23,7 +23,7 @@ def print_2d_gradient():
 	for i in range(term_area):
 		x_range = int(i % termsize.columns / termsize.columns * 255)
 		y_range = int((i / termsize.columns) % termsize.lines / termsize.lines * 255)
-		cells[i] = get_bgcolor(RGB(x_range, 0, y_range))
+		cells[i] = cat_bgcolor(RGB(x_range, 0, y_range))
 	picture: str = ''.join(cells)
 
 	sys.stdout.write(picture)
