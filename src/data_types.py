@@ -208,20 +208,6 @@ class Vec3d:
         """
 		return f"Vec3d({self.x}, {self.y}, {self.z})"
 
-	
-	@staticmethod
-	def scale(v1 : Vec3d,v2: Vec3d) -> Vec3d:
-		"""Produit scalaire entre 2 Vec3d
-
-		Args:
-			v1 (Vec3d):
-			v2 (Vec3d):
-
-		Returns:
-			Vec3d: Retourne le Vec3d du produit scalaire des 2 Vec3d
-		"""
-		return Vec3d(v1.x*v2.x,v1.y*v2.y,v1.z*v2.z)
-	
 	def norm(self) -> float:
 		"""Calcule la norme du Vecteur ( donc sa taille )
 		Ici on utilise math.sqrt directement implémenté en C
