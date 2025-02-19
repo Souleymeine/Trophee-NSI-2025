@@ -47,7 +47,7 @@ class TextArea():
 						current_line_length = 0
 						# Supprime le prochain espace s'il est en début de ligne
 						if word == " ":
-							word = word.replace(' ', '')
+							word = ""
 					wrapped_text += word
 					current_line_length += len(word)
 
