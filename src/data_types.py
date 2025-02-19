@@ -118,7 +118,7 @@ class Vec3d:
         """
 		return self.__mul__(other)
 	
-	def __div__(self, other):
+	def __truediv__(self, other):
 		"""Opération de division du Vec3d
 
 		Args:
