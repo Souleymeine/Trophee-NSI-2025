@@ -3,16 +3,15 @@
 #Projet : pyscape
 #Auteurs : Rabta Souleymeine
 
+import os
 import sys
+import asyncio
 from typing import Final
-
 from TUI_elements.box import Box
 from TUI_elements.text_area import TextArea
 from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Vec2d, VerticalAlignment
 from dialog_printing import print_sized_dialog
 from escape_sequences import get_bgcolor, gohome, goto, ANSI_Styles
-import os
-import asyncio
 from terminal import*
 
 # Petit test assez sympa

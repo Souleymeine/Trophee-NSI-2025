@@ -1,15 +1,12 @@
 #Projet : pyscape
-#Auteurs : Rabta Souleymeine
+#Auteurs : Rabta Souleymeine, Benhassine Jilan
 
-from dataclasses import dataclass
-"""
-Annotations permet de faire référence à une classe directement dans ses méthodes, il va remplacer le type par un string type : 'Vec3', 
-Puis Python fait le taff pour interpréter tous ça !
-"""
+#Annotations permet de faire référence à une classe directement dans ses méthodes, il va remplacer le type par un string type : 'Vec3', 
+#Puis Python fait le taff pour interpréter tous ça !
 from __future__ import annotations 
+from dataclasses import dataclass
 import math
-
-
+from decimal import Decimal
 
 
 @dataclass
@@ -30,56 +27,27 @@ class Vec2d:
 
 
 class Vec3d:
-	def __init__(self,x : int,y :int ,z: int):
-		"""Initialise un vecteur en 3D.
-
-        Args:
-            x (float) : Coordonnée X du vecteur.
-            y (float) : Coordonnée Y du vecteur.
-            z (float) : Coordonnée Z du vecteur.
-
-        """
+	def __init__(self, x: int | float, y: int | float, z: int | float):
 		self.x = x
 		self.y = y
 		self.z = z
+
+	@classmethod
+	def from_unit(cls, unit: int | float):
+		"""Permet de construire un Vec3d à partir d'une seule valeur"""
+		return cls(unit, unit, unit)
 	
-	def __add__(self, other : Vec3d | float | int):
+	def __add__(self, v: Vec3d):
 		"""Additionne un autre vecteur ou un scalaire à ce vecteur.
         Args:
-            other (Vec3d | int | float) : Le vecteur ou le scalaire à additionner.
+            other (Vec3d) : Le vecteur à additionner.
 
         Returns:
             Vec3d : Le résultat de l'addition.
-
-        Raises:
-            TypeError : Si l'opération est effectuée avec un type non pris en charge.
 		"""
-		if isinstance(other, Vec3d):
-			return Vec3d(self.x + other.x, self.y + other.y, self.z + other.z) # Addition avec un Vec3d
-		elif isinstance(other, (int, float)):  # Addition avec un scalaire (Donc pas un Vec3d)
-			return Vec3d(self.x + other, self.y + other, self.z + other)
-		return NotImplemented  # Permet à Python d'essayer __radd__
-
-	# NOTE: La méthode __radd__ est un peu spéciale. Elle permet de faire des opérations dans l'autre sens
-	# Exemple : vec3 + 4  va très bien marché : Vec3.__add__(4) mais dans ce sens 4 + vec3 on va avoir un `TypeError` -> 4.__add__(Vec3)
-    # __radd__ permet donc de d'essayer d'abord 4.__add__(Vec3) et si on tombe sur une erreur `NotImplemented` on le fait dans ce sens Vec3.__add__(4)
-    # Pourquoi ne pas juste implémenté __radd__ ? Tous simplement pour cette raison :
-    # v = Vec3d(1, 2)
-	# print(3 + v) OK : __radd__ est appelé
-    # print(v + 3) ERREUR : __add__ n'est pas défini !
-    
-	def __radd__(self,other : Vec3d | float | int) -> Vec3d:
-		"""Permet l'addition dans l'autre sens (scalaire + vecteur).
-
-        Args:
-            other (int | float) : Le scalaire à additionner.
-
-        Returns:
-            Vec3d : Le résultat de l'addition.
-        """
-		return self.__add__(other)
+		return Vec3d(self.x + v.x, self.y + v.y, self.z + v.z)
 	
-	def __neg__(self, v : Vec3d) -> Vec3d:
+	def __neg__(self) -> Vec3d:
 		"""Applique la négation à un Vec3d
 
 		Args:
@@ -90,18 +58,18 @@ class Vec3d:
 		"""
 		return Vec3d(-self.x, -self.y, -self.z)
 
-	def __sub__(self, other) -> Vec3d:
+	def __sub__(self, v: Vec3d) -> Vec3d:
 		"""Opération de soustraction du Vec3d
 
 		Args:
 			v (Vec3d): 
 
 		Returns:
-			Vec3d: Retourne la soustraction de 2 Vec3d
+			Vec3d: Retourne la soustraction de ce Vec3d avec v
 		"""
-		return self + (-other)
+		return self + (-v)
 	
-	def __rsub__(self, other) -> Vec3d:
+	def __rsub__(self, other: Vec3d) -> Vec3d:
 		"""Permet la soustraction dans l'autre sens (scalaire - vecteur).
 
 		Args:
@@ -130,7 +98,7 @@ class Vec3d:
         """
 		return self.__mul__(other)
 	
-	def __div__(self, other):
+	def __truediv__(self, other):
 		"""Opération de division du Vec3d
 
 		Args:
@@ -139,13 +107,26 @@ class Vec3d:
 		Returns:
 			_type_: La divison de 2 Vec3 entre eux
 		"""
+
+		# On regarde si le résultat de la division est entier pour conserver le type int
 		if isinstance(other, Vec3d):
-			return Vec3d(self.x / other.x, self.y / other.y, self.z / other.z)
+			is_division_round: bool = (
+				self.x / other.x % 1 == 0
+				and self.y / other.y % 1 == 0 
+				and self.z / other.z % 1 == 0)
+			if is_division_round:
+				return Vec3d(int(self.x / other.x), int(self.y / other.y), int(self.z / other.z))
+			else:
+				return Vec3d(self.x / other.x, self.y / other.y, self.z / other.z)
 		else:
-			return Vec3d(self.x / other, self.y / other, self.z / other)
+			# https://stackoverflow.com/questions/3886402/how-to-get-numbers-after-decimal-point
+			is_division_round: bool = self.x / other % 1 == 0
+			if is_division_round:
+				return Vec3d(int(self.x / other), int(self.y / other), int(self.z / other))
+			else:
+				return Vec3d(self.x / other, self.y / other, self.z / other)
 	
-	@staticmethod
-	def normalize(v : Vec3d):
+	def normalize(self):
 		"""
 		Normalise un vecteur donné, c'est-à-dire le convertit en un vecteur unitaire
 		(de norme 1) tout en conservant sa direction.
@@ -169,13 +150,13 @@ class Vec3d:
 			ZeroDivisionError: Si la norme du vecteur est nulle (vecteur nul).
 		"""
 
-		norm = v.norm()
+		norm = self.norm()
 		if norm == 0:
 			raise ZeroDivisionError("Impossible de normaliser un vecteur nul.")
-		return v / norm
+		return self / norm
 
 	@staticmethod
-	def cross(v1: "Vec3d", v2: Vec3d) -> Vec3d:
+	def cross(v1: Vec3d, v2: Vec3d) -> Vec3d:
 		"""Calcule le produit vectoriel (cross product) entre deux vecteurs en 3D.
 
 		Le produit vectoriel de deux vecteurs A et B donne un troisième vecteur C,
@@ -194,11 +175,8 @@ class Vec3d:
 			>>> Vec3d.cross(v1, v2)
 			Vec3d(0, 0, 1)
 
-		Schéma ASCII :
-
+		Schéma:
 			Produit vectoriel : A × B = C
-
-					Produit vectoriel : A × B = C
 
                 B (0,1,0)
                 |      
@@ -208,14 +186,18 @@ class Vec3d:
               /
 
 				C (0,0,1)  ⬆
-
 		"""
 
 		x = v1.y * v2.z - v1.z * v2.y
 		y = v1.z * v2.x - v1.x * v2.z
 		z = v1.x * v2.y - v1.y * v2.x
 
-		return Vec3d(x, y, z)
+		# On regarde si le résultat de la division est entier pour conserver le type int
+		is_division_round: bool = (x % 1 == 0 and y % 1 == 0 and z % 1 == 0)
+		if (is_division_round):
+			return Vec3d(int(x), int(y), int(z))
+		else:
+			return Vec3d(x, y, z)
 
 	def __str__(self) -> str:
 		"""Retourne une représentation textuelle du vecteur.
@@ -225,41 +207,14 @@ class Vec3d:
         """
 		return f"Vec3d({self.x}, {self.y}, {self.z})"
 
-	
-	@staticmethod
-	def scale(v1 : Vec3d,v2: Vec3d) -> Vec3d:
-		"""Produit scalaire entre 2 Vec3d
-
-		Args:
-			v1 (Vec3d):
-			v2 (Vec3d):
-
-		Returns:
-			Vec3d: Retourne le Vec3d du produit scalaire des 2 Vec3d
-		"""
-		return Vec3d(v1.x*v2.x,v1.y*v2.y,v1.z*v2.z)
-	
 	def norm(self) -> float:
 		"""Calcule la norme du Vecteur ( donc sa taille )
-		Ici on utilise math.sqrt directement implémenté en C , on n'utilisera pas encore l'algo de Quake parce qu'il est trop imprécie
+		Ici on utilise math.sqrt directement implémenté en C
 		Returns:
 			_type_: Un float qui représente la norme du vecteur
 		"""
-		return math.sqrt(Vec3d.dot(self,self))
+		return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 	
-	@staticmethod
-	def normalize(v):
-		"""_summary_
-
-		Args:
-			v (_type_): _description_
-
-		Returns:
-			_type_: _description_
-		"""
-		return v / v.norm()
-		
-
 from enum import Enum
 
 class Anchor(Enum):

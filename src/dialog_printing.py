@@ -1,8 +1,8 @@
 #Projet : pyscape
 #Auteurs : Rabta Souleymeine
 
-from typing import Final, Dict 
 import asyncio
+from typing import Final, Dict 
 
 # Tous les délais prédéfinies sont en millisecondes
 
