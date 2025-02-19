@@ -37,19 +37,15 @@ class Vec3d:
 		"""Permet de construire un Vec3d à partir d'une seule valeur"""
 		return cls(unit, unit, unit)
 	
-	def __add__(self, other : Vec3d):
+	def __add__(self, v: Vec3d):
 		"""Additionne un autre vecteur ou un scalaire à ce vecteur.
         Args:
             other (Vec3d) : Le vecteur à additionner.
 
         Returns:
             Vec3d : Le résultat de l'addition.
-
-        Raises:
-            TypeError : Si l'opération est effectuée avec un type non pris en charge.
 		"""
-		if isinstance(other, Vec3d):
-			return Vec3d(self.x + other.x, self.y + other.y, self.z + other.z)
+		return Vec3d(self.x + v.x, self.y + v.y, self.z + v.z)
 	
 	def __neg__(self) -> Vec3d:
 		"""Applique la négation à un Vec3d
@@ -62,16 +58,16 @@ class Vec3d:
 		"""
 		return Vec3d(-self.x, -self.y, -self.z)
 
-	def __sub__(self, other: Vec3d) -> Vec3d:
+	def __sub__(self, v: Vec3d) -> Vec3d:
 		"""Opération de soustraction du Vec3d
 
 		Args:
 			v (Vec3d): 
 
 		Returns:
-			Vec3d: Retourne la soustraction de 2 Vec3d
+			Vec3d: Retourne la soustraction de ce Vec3d avec v
 		"""
-		return self + (-other)
+		return self + (-v)
 	
 	def __rsub__(self, other: Vec3d) -> Vec3d:
 		"""Permet la soustraction dans l'autre sens (scalaire - vecteur).
