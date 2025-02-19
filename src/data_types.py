@@ -188,11 +188,16 @@ class Vec3d:
 				C (0,0,1)  ⬆
 		"""
 
-		return Vec3d(
-            v1.y * v2.z - v1.z * v2.y,
-            v1.z * v2.x - v1.x * v2.z,
-            v1.x * v2.y - v1.y * v2.x
-        )
+		x = v1.y * v2.z - v1.z * v2.y
+		y = v1.z * v2.x - v1.x * v2.z
+		z = v1.x * v2.y - v1.y * v2.x
+
+		# On regarde si le résultat de la division est entier pour conserver le type int
+		is_division_round: bool = (x % 1 == 0 and y % 1 == 0 and z % 1 == 0)
+		if (is_division_round):
+			return Vec3d(int(x), int(y), int(z))
+		else:
+			return Vec3d(x, y, z)
 
 	def __str__(self) -> str:
 		"""Retourne une représentation textuelle du vecteur.
