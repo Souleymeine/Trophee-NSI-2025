@@ -68,7 +68,7 @@ class Vec3d:
         """
 		return self.__add__(other)
 	
-	def __neg__(self, v : Vec3d) -> Vec3d:
+	def __neg__(self) -> Vec3d:
 		"""Applique la négation à un Vec3d
 
 		Args:
