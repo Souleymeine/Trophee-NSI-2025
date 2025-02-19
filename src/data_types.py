@@ -37,10 +37,10 @@ class Vec3d:
 		"""Permet de construire un Vec3d à partir d'une seule valeur"""
 		return cls(unit, unit, unit)
 	
-	def __add__(self, other : Vec3d | float | int):
+	def __add__(self, other : Vec3d):
 		"""Additionne un autre vecteur ou un scalaire à ce vecteur.
         Args:
-            other (Vec3d | int | float) : Le vecteur ou le scalaire à additionner.
+            other (Vec3d) : Le vecteur à additionner.
 
         Returns:
             Vec3d : Le résultat de l'addition.
@@ -49,29 +49,7 @@ class Vec3d:
             TypeError : Si l'opération est effectuée avec un type non pris en charge.
 		"""
 		if isinstance(other, Vec3d):
-			return Vec3d(self.x + other.x, self.y + other.y, self.z + other.z) # Addition avec un Vec3d
-		elif isinstance(other, (int, float)):  # Addition avec un scalaire (Donc pas un Vec3d)
-			return Vec3d(self.x + other, self.y + other, self.z + other)
-		return NotImplemented  # Permet à Python d'essayer __radd__
-
-	# NOTE: La méthode __radd__ est un peu spéciale. Elle permet de faire des opérations dans l'autre sens
-	# Exemple : vec3 + 4  va très bien marché : Vec3.__add__(4) mais dans ce sens 4 + vec3 on va avoir un `TypeError` -> 4.__add__(Vec3)
-    # __radd__ permet donc de d'essayer d'abord 4.__add__(Vec3) et si on tombe sur une erreur `NotImplemented` on le fait dans ce sens Vec3.__add__(4)
-    # Pourquoi ne pas juste implémenté __radd__ ? Tous simplement pour cette raison :
-    # v = Vec3d(1, 2)
-	# print(3 + v) OK : __radd__ est appelé
-    # print(v + 3) ERREUR : __add__ n'est pas défini !
-    
-	def __radd__(self, other: Vec3d) -> Vec3d:
-		"""Permet l'addition dans l'autre sens (scalaire + vecteur).
-
-        Args:
-            other (int | float) : Le scalaire à additionner.
-
-        Returns:
-            Vec3d : Le résultat de l'addition.
-        """
-		return self.__add__(other)
+			return Vec3d(self.x + other.x, self.y + other.y, self.z + other.z)
 	
 	def __neg__(self) -> Vec3d:
 		"""Applique la négation à un Vec3d
