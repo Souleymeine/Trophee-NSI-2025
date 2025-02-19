@@ -225,7 +225,7 @@ class Vec3d:
 	
 	def norm(self) -> float:
 		"""Calcule la norme du Vecteur ( donc sa taille )
-		Ici on utilise math.sqrt directement implémenté en C , on n'utilisera pas encore l'algo de Quake parce qu'il est trop imprécie
+		Ici on utilise math.sqrt directement implémenté en C
 		Returns:
 			_type_: Un float qui représente la norme du vecteur
 		"""
