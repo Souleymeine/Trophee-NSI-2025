@@ -6,6 +6,7 @@
 from __future__ import annotations 
 from dataclasses import dataclass
 import math
+from decimal import Decimal
 
 
 @dataclass
@@ -127,10 +128,25 @@ class Vec3d:
 		Returns:
 			_type_: La divison de 2 Vec3 entre eux
 		"""
+
+		# On regarde si le résultat de la division est entier pour conserver le type int
 		if isinstance(other, Vec3d):
-			return Vec3d(self.x / other.x, self.y / other.y, self.z / other.z)
+			is_division_round: bool = (
+				float(Decimal(str(self.x / other.x))) % 1 == 0.0 
+				and float(Decimal(str(self.y / other.y))) % 1 == 0.0 
+				and float(Decimal(str(self.z / other.z))) % 1 == 0.0
+			)
+			if is_division_round:
+				return Vec3d(int(self.x / other.x), int(self.y / other.y), int(self.z / other.z))
+			else:
+				return Vec3d(self.x / other.x, self.y / other.y, self.z / other.z)
 		else:
-			return Vec3d(self.x / other, self.y / other, self.z / other)
+			# https://stackoverflow.com/questions/3886402/how-to-get-numbers-after-decimal-point
+			is_division_round: bool = (float(Decimal(str(self.x / other))) % 1 == 0.0)
+			if is_division_round:
+				return Vec3d(int(self.x / other), int(self.y / other), int(self.z / other))
+			else:
+				return Vec3d(self.x / other, self.y / other, self.z / other)
 	
 	@staticmethod
 	def normalize(v : Vec3d):
