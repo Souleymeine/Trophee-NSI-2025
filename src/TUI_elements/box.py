@@ -61,18 +61,19 @@ class Box:
 
 		TOP_LEFT_COORD: Final[Vec2d] = self.determine_top_left_coord() 
 
-		set_fgcolor(self.color) # Définie la couleur d'arrière plan pour tous les prochains caractères imprimés.
-		
-		self.draw_rows(TOP_LEFT_COORD)
-		self.draw_columns(TOP_LEFT_COORD)
-		self.draw_corners(TOP_LEFT_COORD)
+		if self.show:
+			set_fgcolor(self.color) # Définie la couleur d'arrière plan pour tous les prochains caractères imprimés.
+			
+			self.draw_rows(TOP_LEFT_COORD)
+			self.draw_columns(TOP_LEFT_COORD)
+			self.draw_corners(TOP_LEFT_COORD)
 
-		# Pour débugage ou démonstration
-		if (self.show_anchor):
-			gohome()
-			print_at('+', Vec2d(self.coord.x, self.coord.y))
-		
-		reset_fgcolor() # Rétablie la couleur d'arrière plan par défaut
+			# Pour débugage ou démonstration
+			if (self.show_anchor):
+				gohome()
+				print_at('+', Vec2d(self.coord.x, self.coord.y))
+			
+			reset_fgcolor() # Rétablie la couleur d'arrière plan par défaut
 
 	def determine_top_left_coord(self) -> Vec2d:
 		match self.anchor:
