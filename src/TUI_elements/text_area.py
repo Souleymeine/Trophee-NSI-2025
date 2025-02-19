@@ -1,11 +1,11 @@
 #Projet : pyscape
 #Auteurs : Rabta Souleymeine
 
-import warnings
+import re
 from typing import Final
 from TUI_elements.box import Box
 from data_types import Alignment, HorizontalAlignment, Vec2d, VerticalAlignment
-from escape_sequences import ANSI_Styles, print_styled_at
+from escape_sequences import ANSI_Styles, cat_goto, goto, print_styled_at, print_styled
 
 # TODO : Les textes ne retournent pas à la ligne...
 class TextArea():
@@ -15,25 +15,57 @@ class TextArea():
 		self.style = style
 		self.alignment = alignment
 		self.box = box
-		if (len(text) > box.dimentions.x - 2):
-			warnings.warn(f"Warning: Text trop grand pour rentrer dans la la largeur: {len(text)} > {box.dimentions.x - 2} (on ne compte pas les bordures)")
 	
+	def wrapped_text(self, first_char_pos: Vec2d) -> str:
+		MAX_LENTGH = self.box.dimentions.x - 2
 
-	def wrapped_text(self) -> str:
-		MAX_LENGTH = self.box.dimentions.x - 2 # 2 représente les deux charactères servant de bordure
-
+		wrapped_text = cat_goto(first_char_pos)
 		current_line_length = 0
-		wrapped_text: str = ""
-		for word in self.text.split():
-			if current_line_length + len(word) > MAX_LENGTH:
-			
+		current_line_count = 1
+
+		# De:  https://medium.com/@shemar.gordon32/how-to-split-and-keep-the-delimiter-s-d433fb697c65
+		split_text = re.split(r"(?=[\n])|(?<=[\n])", self.text)
+		for raw_line in split_text:
+			if raw_line == "\n":
+				wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
+				current_line_count += 1
+				current_line_length = 0
+			else:
+				for word in re.split(r"(?=[ ])|(?<=[ ])", raw_line):
+					if len(word) >= MAX_LENTGH:
+						for char in word:
+							wrapped_text += char
+							current_line_length += 1
+							if current_line_length == MAX_LENTGH:
+								wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
+								current_line_count += 1
+								current_line_length = 0
+						break # On passe au mot suivant
+					elif current_line_length + len(word) > MAX_LENTGH:
+						wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
+						current_line_count += 1
+						current_line_length = 0
+						# Supprime le prochain espace s'il est en début de ligne
+						if word == " ":
+							word = word.replace(' ', '')
+					wrapped_text += word
+					current_line_length += len(word)
+
+		return wrapped_text
+
 
 	def draw(self):
 		self.box.draw()
 
 		BOX_TOP_LEFT_COORD: Final[Vec2d] = self.box.determine_top_left_coord()
 		FIRST_CHAR_COORD: Final[Vec2d] = self.determine_first_char_coord(BOX_TOP_LEFT_COORD)
-		print_styled_at(self.text, self.style, FIRST_CHAR_COORD)
+
+		is_text_inline: bool = len(self.text) <= self.box.dimentions.x - 2
+		if is_text_inline:
+			print_styled_at(self.text, self.style, FIRST_CHAR_COORD)
+		else:
+			margin_pos = Vec2d(BOX_TOP_LEFT_COORD.x + 1, BOX_TOP_LEFT_COORD.y + 1)
+			print_styled(self.wrapped_text(margin_pos), self.style)
 
 	def determine_first_char_coord(self, box_top_left_coord: Vec2d):
 		"""Détermine les bonnes coordonnées pour imprimer le text à partir de 'self.box' et self.alignment."""
