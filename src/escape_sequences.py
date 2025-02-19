@@ -80,7 +80,7 @@ class ANSI_Styles(Enum):
     STRIKETHROUGH = 9
 
 def print_styled(string: str, style: ANSI_Styles):
-    print(f"{CSI}{style}m{string}")
+    print(f"{CSI}{style._value_}m{string}")
 
 def print_styled_at(string: str, style: ANSI_Styles, coord: Vec2d):
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
