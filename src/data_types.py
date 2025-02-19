@@ -182,11 +182,8 @@ class Vec3d:
 			>>> Vec3d.cross(v1, v2)
 			Vec3d(0, 0, 1)
 
-		Schéma ASCII :
-
+		Schéma:
 			Produit vectoriel : A × B = C
-
-					Produit vectoriel : A × B = C
 
                 B (0,1,0)
                 |      
@@ -196,7 +193,6 @@ class Vec3d:
               /
 
 				C (0,0,1)  ⬆
-
 		"""
 
 		return Vec3d(
