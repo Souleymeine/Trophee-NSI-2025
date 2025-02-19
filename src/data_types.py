@@ -31,6 +31,11 @@ class Vec3d:
 		self.x = x
 		self.y = y
 		self.z = z
+
+	@classmethod
+	def from_unit(cls, unit: int | float):
+		"""Permet de construire un Vec3d à partir d'une seule valeur"""
+		return cls(unit, unit, unit)
 	
 	def __add__(self, other : Vec3d | float | int):
 		"""Additionne un autre vecteur ou un scalaire à ce vecteur.
@@ -57,7 +62,7 @@ class Vec3d:
 	# print(3 + v) OK : __radd__ est appelé
     # print(v + 3) ERREUR : __add__ n'est pas défini !
     
-	def __radd__(self,other : Vec3d | float | int) -> Vec3d:
+	def __radd__(self, other: Vec3d) -> Vec3d:
 		"""Permet l'addition dans l'autre sens (scalaire + vecteur).
 
         Args:
@@ -79,7 +84,7 @@ class Vec3d:
 		"""
 		return Vec3d(-self.x, -self.y, -self.z)
 
-	def __sub__(self, other) -> Vec3d:
+	def __sub__(self, other: Vec3d) -> Vec3d:
 		"""Opération de soustraction du Vec3d
 
 		Args:
@@ -90,7 +95,7 @@ class Vec3d:
 		"""
 		return self + (-other)
 	
-	def __rsub__(self, other) -> Vec3d:
+	def __rsub__(self, other: Vec3d) -> Vec3d:
 		"""Permet la soustraction dans l'autre sens (scalaire - vecteur).
 
 		Args:
