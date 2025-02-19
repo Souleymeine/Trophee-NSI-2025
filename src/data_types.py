@@ -131,8 +131,7 @@ class Vec3d:
 			else:
 				return Vec3d(self.x / other, self.y / other, self.z / other)
 	
-	@staticmethod
-	def normalize(v : Vec3d):
+	def normalize(self):
 		"""
 		Normalise un vecteur donné, c'est-à-dire le convertit en un vecteur unitaire
 		(de norme 1) tout en conservant sa direction.
@@ -156,10 +155,10 @@ class Vec3d:
 			ZeroDivisionError: Si la norme du vecteur est nulle (vecteur nul).
 		"""
 
-		norm = v.norm()
+		norm = self.norm()
 		if norm == 0:
 			raise ZeroDivisionError("Impossible de normaliser un vecteur nul.")
-		return v / norm
+		return self / norm
 
 	@staticmethod
 	def cross(v1: Vec3d, v2: Vec3d) -> Vec3d:
