@@ -30,6 +30,9 @@ class TextArea():
 				wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
 				current_line_count += 1
 				current_line_length = 0
+			elif len(raw_line) < MAX_LENTGH:
+				wrapped_text += raw_line
+				current_line_length += len(raw_line)
 			else:
 				for word in re.split(r"(?=[ ])|(?<=[ ])", raw_line):
 					if len(word) >= MAX_LENTGH:
