@@ -1,11 +1,10 @@
 #Projet : pyscape
 #Auteurs : Rabta Souleymeine
 
-import re
 from typing import Final
 from TUI_elements.box import Box
 from data_types import Alignment, HorizontalAlignment, Vec2d, VerticalAlignment
-from escape_sequences import ANSI_Styles, cat_goto, goto, print_styled_at, print_styled
+from escape_sequences import ANSI_Styles, cat_goto, print_styled_at, print_styled
 from utils import split_preserve
 
 # TODO : Les textes ne retournent pas à la ligne...
@@ -26,7 +25,7 @@ class TextArea():
 		current_line_length = 0
 		current_line_count = 1
 
-		def add_offset_linebreak():
+		def _concat_offset_linebreak():
 			"""Fonction imbriquée pratique pour éviter de lourdes répétitions :
 			https://stackoverflow.com/questions/11987358/why-nested-functions-can-access-variables-from-outer-functions-but-are-not-allo"""
 			# nonlocal permet de référencer des variables dans le champ au dessus
@@ -35,28 +34,31 @@ class TextArea():
 			current_line_count += 1
 			current_line_length = 0
 
+		def _concat_text(text: str):
+			# nonlocal permet de référencer des variables dans le champ au dessus
+			nonlocal wrapped_text, current_line_length
+			wrapped_text += text
+			current_line_length += len(text)
+
+
 		for raw_line in split_preserve('\n', self.text):
 			if raw_line == "\n":
-				add_offset_linebreak()
+				_concat_offset_linebreak()
 			elif len(raw_line) < MAX_LENTGH:
-				wrapped_text += raw_line
-				current_line_length += len(raw_line)
+				_concat_text(raw_line)	
 			else:
 				for word in split_preserve(' ', raw_line):
 					if len(word) >= MAX_LENTGH:
 						for char in word:
-							wrapped_text += char
-							current_line_length += 1
+							_concat_text(char)
 							if current_line_length == MAX_LENTGH:
-								add_offset_linebreak()
+								_concat_offset_linebreak()
 						break # On passe au mot suivant
 					elif current_line_length + len(word) > MAX_LENTGH:
-						add_offset_linebreak()
+						_concat_offset_linebreak()
 						# Supprime le prochain espace s'il est en début de ligne
-						if word == " ":
-							word = ""
-					wrapped_text += word
-					current_line_length += len(word)
+						if word == " ": word = ""
+					_concat_text(word)
 
 		return wrapped_text
 
