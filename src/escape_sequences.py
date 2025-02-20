@@ -34,7 +34,13 @@ def show_cursor(): ctrl_seq(f"{CSI}?25h")
 
 def gohome(): ctrl_seq(f"{CSI}H")
 
-def goto(coord: Vec2d) -> None:
+def cat_goto(coord: Vec2d):
+	"""Retoune ce que la fonction 'goto' imprimerait. Utile pour concaténer des séquences entières."""
+	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
+	assert coord.y >= 1, f"y doit être supérieur ou égale à 1: {coord.y}"
+
+	return f"{CSI}{coord.y};{coord.x}H"
+def goto(coord: Vec2d):
 	"""Déplace le curseur aux positions x et y données. 
 	à noter que (1 ; 1) ou la position d'origine ou "home" (voir 'gohome') se réfère au coin supérieur gauche du terminal."""
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
@@ -74,7 +80,7 @@ class ANSI_Styles(Enum):
     STRIKETHROUGH = 9
 
 def print_styled(string: str, style: ANSI_Styles):
-    print(f"{CSI}{style}m{string}")
+    print(f"{CSI}{style._value_}m{string}")
 
 def print_styled_at(string: str, style: ANSI_Styles, coord: Vec2d):
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
@@ -88,10 +94,10 @@ def print_bgcolor(color: RGB):
 	This is done by use a specific control sequences and resetting int while printing a space in the middle."""
 	ctrl_seq(f"{CSI}48;2;{color.r};{color.g};{color.b}m {CSI}m")
 
-def get_bgcolor(color: RGB) -> str:
-	"""Retourne la séquence que 'print_bgcolor' imprimerait"""
+def cat_bgcolor(color: RGB) -> str:
+	"""Retourne la séquence que 'print_bgcolor' imprimerait
+	Utile pour concaténer des séquences entières."""
 	return f"{CSI}48;2;{color.r};{color.g};{color.b}m {CSI}m"
-
 def set_fgcolor(color: RGB):
 	"""Définie une couleur de texte pour tous les prochains print jusqu'à l'appelle de 'reset_bgcolor' ou la fin d'une séquence."""
 	ctrl_seq(f"{CSI}38;2;{color.r};{color.g};{color.b}m")

@@ -1,10 +1,10 @@
 Salut !
 
 Merci d'avoir rejoins le projet ! (Tu peux essayer de zoomer si tes yeux te font mal).
-Pour contribuer au projet, chacun créera sont module qui sera ensuite accessible via un menu.
+Pour contribuer au projet, chacun créera son module qui sera ensuite accessible via un menu.
 Pour le moment, quelques fonctions et classes "basiques" sont disponibles, comme celle qui affiche ce texte de manière "naturelle", ou le petit label que tu as vu en haut à droite.
-Le temps de dévelloppement est assez rapide, tous les fichiers sources accessibles dans ce dépot ont été créé en 3 jours!
-N'hésite pas à te laisser aller et proposer tes meilleures idées. Si tu penses ne pas être capable d'implémenter ton idée, faute de temps ou de moyens, n'héisite pas à en parler aux autres membre du groupe,
+Le temps de dévelloppement est assez rapide, tous les fichiers sources accessibles dans ce dépot ont été créé en quelques jours!
+N'hésite pas à te laisser aller et proposer tes meilleures idées. Si tu penses ne pas être capable d'implémenter ton idée, faute de temps ou de moyens, n'hésite pas à en parler aux autres membre du groupe,
 on est là pour ça !
 
 N'oublie pas d'aller relire les règles du concours avant de coder:
