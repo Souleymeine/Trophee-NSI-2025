@@ -16,6 +16,8 @@ class TextArea():
 		self.alignment = alignment
 		self.box = box
 	
+
+
 	def wrapped_text(self, first_char_pos: Vec2d) -> str:
 		MAX_LENTGH = self.box.dimentions.x - 2
 
@@ -23,13 +25,20 @@ class TextArea():
 		current_line_length = 0
 		current_line_count = 1
 
+		def add_offset_linebreak():
+			"""Fonction imbriquée pratique pour éviter de lourdes répétitions :
+			https://stackoverflow.com/questions/11987358/why-nested-functions-can-access-variables-from-outer-functions-but-are-not-allo"""
+			# nonlocal permet de référencer des variables dans le champ au dessus
+			nonlocal wrapped_text, current_line_count, current_line_length
+			wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
+			current_line_count += 1
+			current_line_length = 0
+
 		# De:  https://medium.com/@shemar.gordon32/how-to-split-and-keep-the-delimiter-s-d433fb697c65
 		split_text = re.split(r"(?=[\n])|(?<=[\n])", self.text)
 		for raw_line in split_text:
 			if raw_line == "\n":
-				wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
-				current_line_count += 1
-				current_line_length = 0
+				add_offset_linebreak()
 			elif len(raw_line) < MAX_LENTGH:
 				wrapped_text += raw_line
 				current_line_length += len(raw_line)
@@ -40,14 +49,10 @@ class TextArea():
 							wrapped_text += char
 							current_line_length += 1
 							if current_line_length == MAX_LENTGH:
-								wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
-								current_line_count += 1
-								current_line_length = 0
+								add_offset_linebreak()
 						break # On passe au mot suivant
 					elif current_line_length + len(word) > MAX_LENTGH:
-						wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
-						current_line_count += 1
-						current_line_length = 0
+						add_offset_linebreak()
 						# Supprime le prochain espace s'il est en début de ligne
 						if word == " ":
 							word = ""
