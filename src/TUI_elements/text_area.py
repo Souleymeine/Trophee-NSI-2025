@@ -6,6 +6,7 @@ from typing import Final
 from TUI_elements.box import Box
 from data_types import Alignment, HorizontalAlignment, Vec2d, VerticalAlignment
 from escape_sequences import ANSI_Styles, cat_goto, goto, print_styled_at, print_styled
+from utils import split_preserve
 
 # TODO : Les textes ne retournent pas à la ligne...
 class TextArea():
@@ -34,16 +35,14 @@ class TextArea():
 			current_line_count += 1
 			current_line_length = 0
 
-		# De:  https://medium.com/@shemar.gordon32/how-to-split-and-keep-the-delimiter-s-d433fb697c65
-		split_text = re.split(r"(?=[\n])|(?<=[\n])", self.text)
-		for raw_line in split_text:
+		for raw_line in split_preserve('\n', self.text):
 			if raw_line == "\n":
 				add_offset_linebreak()
 			elif len(raw_line) < MAX_LENTGH:
 				wrapped_text += raw_line
 				current_line_length += len(raw_line)
 			else:
-				for word in re.split(r"(?=[ ])|(?<=[ ])", raw_line):
+				for word in split_preserve(' ', raw_line):
 					if len(word) >= MAX_LENTGH:
 						for char in word:
 							wrapped_text += char
