@@ -24,6 +24,7 @@ from terminal import*
 async def main():
     init_term()
 
+<<<<<<< HEAD
     # # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
     # with open(notice_path, "r", encoding="utf-8") as file:
@@ -47,6 +48,18 @@ async def main():
                 show_anchor=True,
             ),
         )
+||||||| parent of 450e303 (Commentaire)
+
+	# # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
+	notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
+	with open(notice_path, "r", encoding="utf-8") as file:
+		data = file.read()
+=======
+	# De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
+	notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
+	with open(notice_path, "r", encoding="utf-8") as file:
+		data = file.read()
+>>>>>>> 450e303 (Commentaire)
 
 <<<<<<< HEAD
     # # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
