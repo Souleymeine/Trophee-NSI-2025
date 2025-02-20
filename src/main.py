@@ -48,10 +48,24 @@ async def main():
             ),
         )
 
+<<<<<<< HEAD
     # # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
     with open(notice_path, "r", encoding="utf-8") as file:
         data = file.read()
+||||||| parent of ffe3da9 (Simplifie les argument de notice_text_area)
+	notice_text_area = TextArea(data, ANSI_Styles.BOLD,
+						  Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
+						  Box(Anchor.TOP_LEFT, Coord(1, 1), Coord(60, 35), show=True, rounded=True, color=RGB(255, 100, 0), show_anchor=True))
+	
+	termsize = os.get_terminal_size()
+=======
+	notice_text_area = TextArea(data, ANSI_Styles.BOLD,
+						  Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
+						  Box(Anchor.TOP_LEFT, Coord(1, 1), Coord(60, 35), True, RGB(255, 100, 0), True))
+	
+	termsize = os.get_terminal_size()
+>>>>>>> ffe3da9 (Simplifie les argument de notice_text_area)
 
     notice_text_area = TextArea(data, ANSI_Styles.BOLD,
                                 Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
