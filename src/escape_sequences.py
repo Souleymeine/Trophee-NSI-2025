@@ -8,7 +8,7 @@
 
 import sys
 from enum import Enum
-from data_types import RGB, Vec2d
+from data_types import RGB, Coord
 from typing import Final
 
 # NOTE : On force une écriture brute dans la sortie standard 
@@ -34,13 +34,13 @@ def show_cursor(): ctrl_seq(f"{CSI}?25h")
 
 def gohome(): ctrl_seq(f"{CSI}H")
 
-def cat_goto(coord: Vec2d):
+def cat_goto(coord: Coord):
 	"""Retoune ce que la fonction 'goto' imprimerait. Utile pour concaténer des séquences entières."""
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
 	assert coord.y >= 1, f"y doit être supérieur ou égale à 1: {coord.y}"
 
 	return f"{CSI}{coord.y};{coord.x}H"
-def goto(coord: Vec2d):
+def goto(coord: Coord):
 	"""Déplace le curseur aux positions x et y données. 
 	à noter que (1 ; 1) ou la position d'origine ou "home" (voir 'gohome') se réfère au coin supérieur gauche du terminal."""
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
@@ -48,7 +48,7 @@ def goto(coord: Vec2d):
 	
 	ctrl_seq(f"{CSI}{coord.y};{coord.x}H")
 
-def print_at(string: str, coord: Vec2d):
+def print_at(string: str, coord: Coord):
 	"""prints the given string to the given location in the terminal.
 	Note that (0 , 0) or home positions (se 'gohome') refers to the top left hand corner of the terminal.
 	The first character will be placed at the given position and the others will be placed inline like any regular 'print' call"""
@@ -82,7 +82,7 @@ class ANSI_Styles(Enum):
 def print_styled(string: str, style: ANSI_Styles):
     print(f"{CSI}{style._value_}m{string}")
 
-def print_styled_at(string: str, style: ANSI_Styles, coord: Vec2d):
+def print_styled_at(string: str, style: ANSI_Styles, coord: Coord):
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
 	assert coord.y >= 1, f"y doit être supérieur ou égale à 1: {coord.y}"
 	print(f"{CSI}{coord.y};{coord.x}H{CSI}{style._value_}m{string}")
@@ -105,7 +105,7 @@ def reset_fgcolor():
 	"""Rétablie la couleur de texte par défaut du terminal si la séquence d'échappement précédante n'a pas été terminée."""
 	ctrl_seq(f"{CSI}39m")
 
-def print_bgcolor_at(color: RGB, coord: Vec2d):
+def print_bgcolor_at(color: RGB, coord: Coord):
 	"""Identique à 'print_bgcolor' mais aux positions données au lieu de celles du curseur.
 	Sert à colorier une cellule au coordonnées données."""
 	assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"

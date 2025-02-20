@@ -15,10 +15,11 @@ from data_types import (
     Alignment,
     Anchor,
     HorizontalAlignment,
-    Vec2d,
+    Coord,
     VerticalAlignment,
 )
-from dialog_printing import print_sized_dialog
+from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
+from tests import print_sized_dialog
 from escape_sequences import cat_bgcolor, gohome, goto, ANSI_Styles
 from terminal import *
 
@@ -60,8 +61,8 @@ async def main():
             Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
             Box(
                 Anchor.TOP_LEFT,
-                Vec2d(1, 1),
-                Vec2d(60, 35),
+                Coord(1, 1),
+                Coord(60, 35),
                 show=True,
                 rounded=True,
                 color=RGB(255, 100, 0),
@@ -69,7 +70,7 @@ async def main():
             ),
         )
 
-    for i in range(termsize.columns - notice_text_area.box.dimentions.x):
+    for _ in range(termsize.columns - notice_text_area.box.dimentions.x):
         notice_text_area.box.dimentions.x += 1
         notice_text_area.draw()
         await asyncio.sleep(0.05)
@@ -78,7 +79,7 @@ async def main():
 
     notice_text_area.draw()
 
-    goto(Vec2d(1, termsize.lines))
+    goto(Coord(1, termsize.lines))
     input("Appuie sur 'Entrer' pour quitter.")
 
     reset_term()

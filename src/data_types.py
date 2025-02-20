@@ -16,7 +16,7 @@ class RGB:
 	b: int
 
 @dataclass
-class Vec2d:
+class Coord:
 	"""
 	Classe de données simple représentant un couple de valeur x et y.
 	On peu l'utiliser comme vecteur, coordonnées, dimmensions, ou quoique ce soit qui puisse être représenté par une abscisse et une ordonnée.
