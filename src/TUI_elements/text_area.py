@@ -3,7 +3,7 @@
 
 from typing import Final
 from TUI_elements.box import Box
-from data_types import Alignment, HorizontalAlignment, Vec2d, VerticalAlignment
+from data_types import Alignment, HorizontalAlignment, Coord, VerticalAlignment
 from escape_sequences import ANSI_Styles, cat_goto, print_styled_at, print_styled
 from utils import split_preserve
 
@@ -18,7 +18,7 @@ class TextArea():
 	
 
 
-	def wrapped_text(self, first_char_pos: Vec2d) -> str:
+	def wrapped_text(self, first_char_pos: Coord) -> str:
 		MAX_LENTGH = self.box.dimentions.x - 2
 
 		wrapped_text = cat_goto(first_char_pos)
@@ -30,7 +30,7 @@ class TextArea():
 			https://stackoverflow.com/questions/11987358/why-nested-functions-can-access-variables-from-outer-functions-but-are-not-allo"""
 			# nonlocal permet de référencer des variables dans le champ au dessus
 			nonlocal wrapped_text, current_line_count, current_line_length
-			wrapped_text += cat_goto(Vec2d(first_char_pos.x, first_char_pos.y + current_line_count))
+			wrapped_text += cat_goto(Coord(first_char_pos.x, first_char_pos.y + current_line_count))
 			current_line_count += 1
 			current_line_length = 0
 
@@ -66,19 +66,19 @@ class TextArea():
 	def draw(self):
 		self.box.draw()
 
-		BOX_TOP_LEFT_COORD: Final[Vec2d] = self.box.determine_top_left_coord()
-		FIRST_CHAR_COORD: Final[Vec2d] = self.determine_first_char_coord(BOX_TOP_LEFT_COORD)
+		BOX_TOP_LEFT_COORD: Final[Coord] = self.box.determine_top_left_coord()
+		FIRST_CHAR_COORD: Final[Coord] = self.determine_first_char_coord(BOX_TOP_LEFT_COORD)
 
 		is_text_inline: bool = len(self.text) <= self.box.dimentions.x - 2
 		if is_text_inline:
 			print_styled_at(self.text, self.style, FIRST_CHAR_COORD)
 		else:
-			margin_pos = Vec2d(BOX_TOP_LEFT_COORD.x + 1, BOX_TOP_LEFT_COORD.y + 1)
+			margin_pos = Coord(BOX_TOP_LEFT_COORD.x + 1, BOX_TOP_LEFT_COORD.y + 1)
 			print_styled(self.wrapped_text(margin_pos), self.style)
 
-	def determine_first_char_coord(self, box_top_left_coord: Vec2d):
+	def determine_first_char_coord(self, box_top_left_coord: Coord):
 		"""Détermine les bonnes coordonnées pour imprimer le text à partir de 'self.box' et self.alignment."""
-		first_char_coord = Vec2d(0, 0)
+		first_char_coord = Coord(0, 0)
 		match self.alignment.horizontal:
 			case HorizontalAlignment.LEFT:   first_char_coord.x = box_top_left_coord.x + 1
 			case HorizontalAlignment.CENTER: first_char_coord.x = int(box_top_left_coord.x + self.box.dimentions.x / 2 - len(self.text)/2)

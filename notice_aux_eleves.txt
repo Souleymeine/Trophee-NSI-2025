@@ -12,6 +12,15 @@ N'oublie pas d'aller relire les règles du concours avant de coder:
 
 Plus d'infos seront disponibles en présentielle ou plus tardivement dans le dossier `docs/`
 
+Quelques commandes git:
+- `git branch nom-de-la-branche`                              <- Permet de créer une branche 
+- `git checkout nom-de-la-branche`                            <- Permet de se mettre sur la branche donnée
+- `git add chemin_du_fichier`                                 <- Permet d'ajouter les fichiers à enregistrer comme modifiés avant un commit
+- `git commit -m "Nom du commit" -m "Message ou description"` <- Sauvegarde les changement effectué sur la branche
+- `git push -u nom-de-la-branche`                             <- "Publie les changements (commit) sur la branche donnée en ligne 
+- `git pull`                                                  <- Pour se mettre à jour sur la branche actuelle si des changements ont été fait
+- `git stash`                                                 <- Si jamais vous avez effectué des changements non sauvegardés et que vous souhaitez aller voir une autre branche
+
 Bon courage !!
 .
 .
