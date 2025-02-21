@@ -24,39 +24,26 @@ from terminal import*
 async def main():
     init_term()
 
-    # # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
-    notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
-    # with open(notice_path, "r", encoding="utf-8") as file:
-    #     data = file.read()
-    #     await print_sized_dialog(data, termsize.columns - notice_text_area.box.dimentions.x - 8, speed_multiplier=1.25)
-
-    with open(notice_path, "r", encoding="utf-") as file:
-        data = file.read()
-        # await print_sized_dialog(data, termsize.columns - notice_text_area.box.dimentions.x - 8, speed_multiplier=1.25)
-        notice_text_area = TextArea(
-            data,
-            ANSI_Styles.BOLD,
-            Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
-            Box(
-                Anchor.TOP_LEFT,
-                Coord(1, 1),
-                Coord(60, 35),
-                show=True,
-                rounded=True,
-                color=RGB(255, 100, 0),
-                show_anchor=True,
-            ),
-        )
-
     # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
-    with open(notice_path, "r", encoding="utf-8") as file:
+    with open(notice_path, "r", encoding="utf-") as file:
         data = file.read()
 
-    notice_text_area = TextArea(data, ANSI_Styles.BOLD,
-                          Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
-                          Box(Anchor.TOP_LEFT, Coord(1, 1), Coord(125, 35), True, RGB(255, 100, 0), True))
-    
+    notice_text_area = TextArea(
+        data,
+        ANSI_Styles.BOLD,
+        Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
+        Box(
+            Anchor.TOP_LEFT,
+            Coord(1, 1),
+            Coord(60, 35),
+            show=True,
+            rounded=True,
+            color=RGB(255, 100, 0),
+            show_anchor=True,
+        ),
+    )
+
     termsize = os.get_terminal_size()
 
     for _ in range(termsize.columns - notice_text_area.box.dimentions.x):
@@ -65,11 +52,11 @@ async def main():
         await asyncio.sleep(0.05)
         gohome()
         sys.stdout.write("\x1b[2J")
-    
     notice_text_area.draw()
 
     goto(Coord(1, termsize.lines))
     input("Appuie sur 'Entrer' pour quitter.")
+
     reset_term()
 
 def exit_gracefully(signum, frame):
