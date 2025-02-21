@@ -9,14 +9,6 @@ import sys
 import asyncio
 from TUI_elements.box import Box
 from TUI_elements.text_area import TextArea
-from data_types import (
-    RGB,
-    Alignment,
-    Anchor,
-    HorizontalAlignment,
-    Coord,
-    VerticalAlignment,
-)
 from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
 from escape_sequences import gohome, goto, ANSI_Styles
 from terminal import*
