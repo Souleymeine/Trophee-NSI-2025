@@ -70,6 +70,7 @@ async def main():
 
     goto(Coord(1, termsize.lines))
     input("Appuie sur 'Entrer' pour quitter.")
+    reset_term()
 
 def exit_gracefully(signum, frame):
     reset_term()
