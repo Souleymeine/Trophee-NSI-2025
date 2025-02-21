@@ -13,9 +13,7 @@ from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, Verti
 from escape_sequences import gohome, goto, ANSI_Styles
 from terminal import*
 
-async def main():
-    init_term()
-
+async def show_notice_test(termsize: os.terminal_size):
     # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
     with open(notice_path, "r", encoding="utf-8") as file:
@@ -36,8 +34,6 @@ async def main():
         ),
     )
 
-    termsize = os.get_terminal_size()
-
     for _ in range(termsize.columns - notice_text_area.box.dimentions.x):
         notice_text_area.box.dimentions.x += 1
         notice_text_area.draw()
@@ -46,6 +42,13 @@ async def main():
         sys.stdout.write("\x1b[2J")
     notice_text_area.draw()
 
+
+async def main():
+    init_term()
+    termsize = os.get_terminal_size()
+
+    await show_notice_test(termsize)
+    
     goto(Coord(1, termsize.lines))
     input("Appuie sur 'Entrer' pour quitter.")
 
