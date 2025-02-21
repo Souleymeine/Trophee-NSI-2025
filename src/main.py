@@ -54,9 +54,9 @@ async def main():
         data = file.read()
 
     notice_text_area = TextArea(data, ANSI_Styles.BOLD,
-                                Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
-                                Box(Anchor.TOP_LEFT, Coord(1, 1), Coord(60, 35), show=True, rounded=True, color=RGB(255, 100, 0), show_anchor=True))
-
+						  Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
+						  Box(Anchor.TOP_LEFT, Coord(1, 1), Coord(125, 35), True, RGB(255, 100, 0), True))
+	
     termsize = os.get_terminal_size()
 
     for _ in range(termsize.columns - notice_text_area.box.dimentions.x):
@@ -66,6 +66,8 @@ async def main():
         gohome()
         sys.stdout.write("\x1b[2J")
     
+    notice_text_area.draw()
+
     goto(Coord(1, termsize.lines))
     input("Appuie sur 'Entrer' pour quitter.")
 
