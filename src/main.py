@@ -27,8 +27,8 @@ async def main():
     # # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
     # with open(notice_path, "r", encoding="utf-8") as file:
-    # 	data = file.read()
-    # 	await print_sized_dialog(data, termsize.columns - notice_text_area.box.dimentions.x - 8, speed_multiplier=1.25)
+    #     data = file.read()
+    #     await print_sized_dialog(data, termsize.columns - notice_text_area.box.dimentions.x - 8, speed_multiplier=1.25)
 
     with open(notice_path, "r", encoding="utf-") as file:
         data = file.read()
@@ -48,15 +48,15 @@ async def main():
             ),
         )
 
-	# De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
+    # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
     with open(notice_path, "r", encoding="utf-8") as file:
         data = file.read()
 
     notice_text_area = TextArea(data, ANSI_Styles.BOLD,
-						  Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
-						  Box(Anchor.TOP_LEFT, Coord(1, 1), Coord(125, 35), True, RGB(255, 100, 0), True))
-	
+                          Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
+                          Box(Anchor.TOP_LEFT, Coord(1, 1), Coord(125, 35), True, RGB(255, 100, 0), True))
+    
     termsize = os.get_terminal_size()
 
     for _ in range(termsize.columns - notice_text_area.box.dimentions.x):
