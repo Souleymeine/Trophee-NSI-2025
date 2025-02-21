@@ -18,7 +18,7 @@ async def main():
 
     # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
-    with open(notice_path, "r", encoding="utf-") as file:
+    with open(notice_path, "r", encoding="utf-8") as file:
         data = file.read()
 
     notice_text_area = TextArea(
