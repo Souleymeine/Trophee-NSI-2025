@@ -7,7 +7,7 @@ import os
 import sys
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, show_cursor, unset_altbuf
 
-def init_term():
+def init():
     """Initialise le terminal pour supporter les séqunces d'échappement et les caractères spéciaux.
     Prépare également l'écran secondaire du terminal."""
     
@@ -22,7 +22,7 @@ def init_term():
     hide_cursor()
     gohome()
 
-def reset_term():
+def reset():
     """Rétablie l'était du terminal initial."""
     reset_style()
     unset_altbuf()

@@ -11,7 +11,8 @@ from TUI_elements.box import Box
 from TUI_elements.text_area import TextArea
 from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
 from escape_sequences import gohome, goto, ANSI_Styles
-from terminal import*
+import mouse
+import terminal
 
 async def show_notice_test(termsize: os.terminal_size):
     # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
@@ -44,18 +45,20 @@ async def show_notice_test(termsize: os.terminal_size):
 
 
 async def main():
-    init_term()
+    terminal.init()
     termsize = os.get_terminal_size()
 
-    await show_notice_test(termsize)
+    mouse_info = mouse.Info(None, None, None, Coord(1, 1), 0)
+    print(mouse_info)
+    # await show_notice_test(termsize)
     
     goto(Coord(1, termsize.lines))
     input("Appuie sur 'Entrer' pour quitter.")
 
-    reset_term()
+    terminal.reset()
 
 def exit_gracefully(signum, frame):
-    reset_term()
+    terminal.reset()
     sys.exit(0)
 
 if __name__ == "__main__":
