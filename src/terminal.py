@@ -55,11 +55,13 @@ class _Info(metaclass=Singleton):
             else:
                 self._set_posix_echo(False)
                 xterm_mouse_tracking(True)
+                hide_cursor()
         else:
             # la fonction _disable_win_echo se terminera automatiquement si self._mouse_mode = False
             if sys.platform != "win32":
                 self._set_posix_echo(True)
                 xterm_mouse_tracking(False)
+                show_cursor()
 
 # Instance unique !
 info = _Info()
