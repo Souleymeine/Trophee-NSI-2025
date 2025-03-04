@@ -18,7 +18,9 @@ from typing import Final
 # Alias sys.stdout.write comme ctrl_seq (abréviation du terme spécifique 'control sequence' en anglais),
 # plus pratique pour différencier un simple appel à 'stdout.write' d'une "séquence de contrôle".
 # Pour toutes les mentions de la fonction 'ctrl_seq' (alias de stdout.write), se référer au lien github cité en en-tête.
-ctrl_seq = sys.stdout.write
+def ctrl_seq(seq: str):
+    sys.stdout.write(seq)
+    sys.stdout.flush()
 
 # CSI pour "Control Sequence Introducer", nom assez explicite.
 CSI : Final[str] = "\x1B["
@@ -112,3 +114,9 @@ def print_bgcolor_at(color: RGB, coord: Coord):
     assert coord.y >= 1, f"y doit être supérieur ou égale à 1: {coord.y}"
 
     ctrl_seq(f"{CSI}{coord.y};{coord.x}H{CSI}48;2;{color.r};{color.g};{color.b}m {CSI}m")
+
+
+# https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
+
+def xterm_mouse_tracking(enabled: bool):
+    ctrl_seq(f"{CSI}?1003{'h' if enabled else 'l'}")
