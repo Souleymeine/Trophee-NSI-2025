@@ -76,7 +76,8 @@ def listen_to_input():
     last_click: mouse.Click | None = None
 
     while True:
-        terminal.info.last_byte = terminal.unix_getch()
+        if sys.platform != "win32":
+            terminal.info.last_byte = terminal.unix_getch()
 
         if terminal.info.mouse_mode == True:
             if sys.platform == "win32":
