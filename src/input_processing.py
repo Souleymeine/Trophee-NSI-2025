@@ -76,11 +76,13 @@ def listen_to_input():
     last_click: mouse.Click | None = None
 
     while True:
+        terminal.info.last_byte = terminal.unix_getch()
+
         if terminal.info.mouse_mode == True:
             if sys.platform == "win32":
                 pass
             else:
-                terminal.info.last_byte = mouse_seq[i] = terminal.unix_getch()
+                mouse_seq[i] = terminal.info.last_byte
                 i += 1
 
                 if i == SEQ_LEN:
@@ -95,7 +97,6 @@ def listen_to_input():
                     # test pour le click dans une zone de texte
                     if mouse_info.coord.x == 1 and mouse_info.coord.y and mouse_info.click != None and mouse_info.click.released:
                         terminal.info.mouse_mode = False
-
         else:
             # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
             if terminal.info.last_byte == b'\x1b':
