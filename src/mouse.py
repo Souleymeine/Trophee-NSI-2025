@@ -29,7 +29,6 @@ class Click():
 @dataclass
 class Info():
     """Indique toutes les informations accessibles à propos de la souris à un instant t"""
-    previous: Info | None
     click: Click | None
     wheel: Wheel | None
     coord: Coord
