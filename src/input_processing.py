@@ -1,3 +1,6 @@
+# Projet : pyscape
+# Auteurs : Rabta Souleymeine
+
 from enum import IntFlag
 import sys
 import os
