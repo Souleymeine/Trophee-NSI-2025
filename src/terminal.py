@@ -54,27 +54,27 @@ class _Info(metaclass=Singleton):
         if value == True:
             if sys.platform == "win32":
                 # le drapeau pour le mode souris désactive automatiquement l'écho
-                self.set_win_stdin_mode(self.win_stdin_mouse_mode)
+                self.set_win_stdin_mode(self.win_conin_mouse_mode)
             else:
                 self.set_posix_echo(False)
                 xterm_mouse_tracking(True)
-                hide_cursor()
+            hide_cursor()
         else:
             if sys.platform == "win32":
-                self.set_win_stdin_mode(self.win_stdin_text_mode)
+                self.set_win_stdin_mode(self.win_conin_text_mode)
             else:
                 self.set_posix_echo(True)
                 xterm_mouse_tracking(False)
-                show_cursor()
+            show_cursor()
 
     @property
-    def win_stdin_default_mode(self) -> int:
+    def win_conin_default_mode(self) -> int:
         return self._win_conin_default_mode
     @property
-    def win_stdin_text_mode(self) -> int:
+    def win_conin_text_mode(self) -> int:
         return self._win_conin_text_mode
     @property
-    def win_stdin_mouse_mode(self) -> int:
+    def win_conin_mouse_mode(self) -> int:
         return self._win_conin_mouse_mode
     
     def set_win_stdin_mode(self, mode: int):
@@ -147,4 +147,4 @@ def reset():
     show_cursor()
     info.mouse_mode = False
     if sys.platform == "win32":
-        info.set_win_stdin_mode(info.win_stdin_default_mode)
+        info.set_win_stdin_mode(info.win_conin_default_mode)

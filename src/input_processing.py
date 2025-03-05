@@ -131,6 +131,10 @@ def listen_to_input():
                         last_click = mouse_info.click
                     
                     on_mouse(mouse_info)
+
+                    # test pour le click dans une zone de texte
+                    if mouse_info.coord.x == 1 and mouse_info.coord.y and mouse_info.click != None and mouse_info.click.released:
+                        terminal.info.mouse_mode = False
             else:
                 mouse_seq[i] = terminal.info.last_byte
                 i += 1
