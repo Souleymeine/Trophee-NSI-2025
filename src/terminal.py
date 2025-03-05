@@ -9,6 +9,7 @@ if sys.platform == "win32":
     import msvcrt
 else:
     import termios
+from threading import Thread
 import warnings
 
 from data_types import Singleton
@@ -26,14 +27,17 @@ class _Info(metaclass=Singleton):
     def _set_posix_echo(self, enabled: bool):
         """Active/Désactive l'affichage de l'entré de l'utilisateur.
         Aussi utilsé pour interpréter les touches de clavier/souris sans afficher quoique ce soit."""
-        fd = sys.stdin.fileno()
-        new = termios.tcgetattr(fd)
-        if enabled:
-            new[3] |= termios.ECHO
-        else:
-            new[3] &= ~termios.ECHO
+        if sys.platform != "win32":
+            fd = sys.stdin.fileno()
+            new = termios.tcgetattr(fd)
+            if enabled:
+                new[3] |= termios.ECHO
+            else:
+                new[3] &= ~termios.ECHO
 
-        termios.tcsetattr(fd, termios.TCSANOW, new)
+            termios.tcsetattr(fd, termios.TCSANOW, new)
+        else:
+            warnings.warn("La méthode '_set_posix_echo' devrait être appelée sous les systèmes POSIX uniquement!")
 
     @property
     def last_byte(self) -> bytes:
@@ -68,20 +72,23 @@ info = _Info()
 
 def unix_getch() -> bytes:
     """Retourne le dernier octet de stdin sous les systèmes POSIX"""
-    # https://stackoverflow.com/questions/3523174/raw-input-without-pressing-enter
-    fd: int = sys.stdin.fileno()
-    orig = termios.tcgetattr(fd)
+    if sys.platform != "win32":
+        # https://stackoverflow.com/questions/3523174/raw-input-without-pressing-enter
+        fd: int = sys.stdin.fileno()
+        orig = termios.tcgetattr(fd)
 
-    new = termios.tcgetattr(fd)
-    new[3] &= ~termios.ICANON
-    new[6][termios.VMIN] = 1
-    new[6][termios.VTIME] = 0
+        new = termios.tcgetattr(fd)
+        new[3] &= ~termios.ICANON
+        new[6][termios.VMIN] = 1
+        new[6][termios.VTIME] = 0
 
-    try:
-        termios.tcsetattr(fd, termios.TCSAFLUSH, new)
-        return sys.stdin.buffer.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
+        try:
+            termios.tcsetattr(fd, termios.TCSAFLUSH, new)
+            return sys.stdin.buffer.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
+    else:
+        warnings.warn("La méthode 'unix_getch' devrait être appelée sous les systèmes POSIX uniquement!")
 
 def init():
     """Initialise le terminal pour supporter les séqunces d'échappement et les caractères spéciaux.
