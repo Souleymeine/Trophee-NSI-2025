@@ -19,6 +19,7 @@ import time
 import input_processing
 import terminal
 from multiprocessing import Process, Lock
+import atexit
 
 async def show_notice_test(termsize: os.terminal_size):
     # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python

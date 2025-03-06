@@ -7,37 +7,36 @@ import os
 import sys
 if sys.platform == "win32":
     import msvcrt
+    import win32console
+    import win32file
+    import win32con
 else:
     import termios
-from threading import Thread
 import warnings
 
 from data_types import Singleton
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, show_cursor, unset_altbuf, xterm_mouse_tracking
 
 class _Info(metaclass=Singleton):
-    def _disable_win_echo(self):
+    def __init__(self):
+        self._mouse_mode = True
+        self._last_byte = b''
+
         if sys.platform == "win32":
-            while self.mouse_mode:
-                self.last_byte = msvcrt.getch()
-        else:
-            warnings.warn("La méthode '_disable_win_echo' devrait être appelée sur windows uniquement!")
+            # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
 
-    # De https://gist.github.com/kgriffs/5726314
-    def _set_posix_echo(self, enabled: bool):
-        """Active/Désactive l'affichage de l'entré de l'utilisateur.
-        Aussi utilsé pour interpréter les touches de clavier/souris sans afficher quoique ce soit."""
-        if sys.platform != "win32":
-            fd = sys.stdin.fileno()
-            new = termios.tcgetattr(fd)
-            if enabled:
-                new[3] |= termios.ECHO
-            else:
-                new[3] &= ~termios.ECHO
+            ENABLE_EXTENDED_FLAGS = 0x0080
+            ENABLE_QUICK_EDIT_MODE = 0x0040
 
-            termios.tcsetattr(fd, termios.TCSANOW, new)
-        else:
-            warnings.warn("La méthode '_set_posix_echo' devrait être appelée sous les systèmes POSIX uniquement!")
+            self._conin = win32console.PyConsoleScreenBufferType(
+                win32file.CreateFile("CONIN$", win32file.GENERIC_READ | win32file.GENERIC_WRITE,
+                    win32file.FILE_SHARE_WRITE, None, win32file.OPEN_ALWAYS, 0, None)
+            )
+            self._conin.SetStdHandle(win32console.STD_INPUT_HANDLE)
+
+            self._win_conin_default_mode = self._conin.GetConsoleMode()
+            self._win_conin_text_mode = self._win_conin_default_mode & ~ENABLE_QUICK_EDIT_MODE
+            self._win_conin_mouse_mode = (self._win_conin_text_mode | win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS)
 
     @property
     def last_byte(self) -> bytes:
@@ -54,18 +53,51 @@ class _Info(metaclass=Singleton):
         self._mouse_mode = value
         if value == True:
             if sys.platform == "win32":
-                # La fonction s'éxecutera jusqu'à ce que mouse_mode = False
-                Thread(target=self._disable_win_echo).start()
+                # le drapeau pour le mode souris désactive automatiquement l'écho
+                self.set_win_stdin_mode(self.win_stdin_mouse_mode)
             else:
-                self._set_posix_echo(False)
+                self.set_posix_echo(False)
                 xterm_mouse_tracking(True)
                 hide_cursor()
         else:
-            # la fonction _disable_win_echo se terminera automatiquement si self._mouse_mode = False
-            if sys.platform != "win32":
-                self._set_posix_echo(True)
+            if sys.platform == "win32":
+                self.set_win_stdin_mode(self.win_stdin_text_mode)
+            else:
+                self.set_posix_echo(True)
                 xterm_mouse_tracking(False)
                 show_cursor()
+
+    @property
+    def win_stdin_default_mode(self) -> int:
+        return self._win_conin_default_mode
+    @property
+    def win_stdin_text_mode(self) -> int:
+        return self._win_conin_text_mode
+    @property
+    def win_stdin_mouse_mode(self) -> int:
+        return self._win_conin_mouse_mode
+    
+    def set_win_stdin_mode(self, mode: int):
+        if sys.platform == "win32":
+            self._conin.SetConsoleMode(mode)
+        else:
+            warnings.warn("'set_win_stdin_mode' est une fonction exclusive à Windows.")
+
+    # De https://gist.github.com/kgriffs/5726314
+    def set_posix_echo(self, enabled: bool):
+        """Active/Désactive l'affichage de l'entré de l'utilisateur.
+        Aussi utilsé pour interpréter les touches de clavier/souris sans afficher quoique ce soit."""
+        if sys.platform != "win32":
+            fd = sys.stdin.fileno()
+            new = termios.tcgetattr(fd)
+            if enabled:
+                new[3] |= termios.ECHO
+            else:
+                new[3] &= ~termios.ECHO
+
+            termios.tcsetattr(fd, termios.TCSANOW, new)
+        else:
+            warnings.warn("La méthode '_set_posix_echo' devrait être appelée sous les systèmes POSIX uniquement!")
 
 # Instance unique !
 info = _Info()
@@ -114,3 +146,5 @@ def reset():
     unset_altbuf()
     show_cursor()
     info.mouse_mode = False
+    if sys.platform == "win32":
+        info.set_win_stdin_mode(info.win_stdin_default_mode)
