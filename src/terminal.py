@@ -34,9 +34,9 @@ class _Info(metaclass=Singleton):
             )
             self._conin.SetStdHandle(win32console.STD_INPUT_HANDLE)
 
-            self._win_conin_default_mode = self._conin.GetConsoleMode()
-            self._win_conin_text_mode = self._win_conin_default_mode & ~ENABLE_QUICK_EDIT_MODE
-            self._win_conin_mouse_mode = (self._win_conin_text_mode | win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS)
+            self._conin_default_mode = self._conin.GetConsoleMode()
+            self._conin_text_mode = self._conin_default_mode & ~ENABLE_QUICK_EDIT_MODE
+            self._conin_mouse_mode = (self._conin_text_mode | win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS)
 
     @property
     def last_byte(self) -> bytes:
@@ -54,28 +54,28 @@ class _Info(metaclass=Singleton):
         if value == True:
             if sys.platform == "win32":
                 # le drapeau pour le mode souris désactive automatiquement l'écho
-                self.set_win_stdin_mode(self.win_conin_mouse_mode)
+                self.set_win_stdin_mode(self.conin_mouse_mode)
             else:
                 self.set_posix_echo(False)
                 xterm_mouse_tracking(True)
             hide_cursor()
         else:
             if sys.platform == "win32":
-                self.set_win_stdin_mode(self.win_conin_text_mode)
+                self.set_win_stdin_mode(self.conin_text_mode)
             else:
                 self.set_posix_echo(True)
                 xterm_mouse_tracking(False)
             show_cursor()
 
     @property
-    def win_conin_default_mode(self) -> int:
-        return self._win_conin_default_mode
+    def conin_default_mode(self) -> int:
+        return self._conin_default_mode
     @property
-    def win_conin_text_mode(self) -> int:
-        return self._win_conin_text_mode
+    def conin_text_mode(self) -> int:
+        return self._conin_text_mode
     @property
-    def win_conin_mouse_mode(self) -> int:
-        return self._win_conin_mouse_mode
+    def conin_mouse_mode(self) -> int:
+        return self._conin_mouse_mode
     
     def set_win_stdin_mode(self, mode: int):
         if sys.platform == "win32":
@@ -147,4 +147,4 @@ def reset():
     show_cursor()
     info.mouse_mode = False
     if sys.platform == "win32":
-        info.set_win_stdin_mode(info.win_conin_default_mode)
+        info.set_win_stdin_mode(info.conin_default_mode)
