@@ -19,7 +19,7 @@ class _Info(metaclass=Singleton):
     def _disable_win_echo(self):
         if sys.platform == "win32":
             while self.mouse_mode:
-                self.last_byte = msvcrt.getwch()
+                self.last_byte = msvcrt.getch()
         else:
             warnings.warn("La méthode '_disable_win_echo' devrait être appelée sur windows uniquement!")
 
@@ -89,6 +89,7 @@ def unix_getch() -> bytes:
             termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
     else:
         warnings.warn("La méthode 'unix_getch' devrait être appelée sous les systèmes POSIX uniquement!")
+        return b'unix_getch : Mauvaise plateforme (windows)'
 
 def init():
     """Initialise le terminal pour supporter les séqunces d'échappement et les caractères spéciaux.
