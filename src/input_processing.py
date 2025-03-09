@@ -112,11 +112,13 @@ def listen_to_input():
     # On initialise les informations précédentes de la souris par des informations non valide, au cas où
     # Cette valeur sera changée à partir de la première intéraction
     previous_mouse_info = mouse.Info(None, None, Coord(0, 0), -1)
+    current_mouse_info: mouse.Info | None = None
     last_click: mouse.Click | None = None
 
     while True:
         if sys.platform == "win32":
             win_con_event = terminal.info._conin.ReadConsoleInput(1)[0]
+
             if win_con_event.EventType == win32console.KEY_EVENT and win_con_event.KeyDown:
                 terminal.info.last_byte = win_con_event.Char.encode("utf-8")
 
@@ -124,17 +126,7 @@ def listen_to_input():
                 if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
                     last_click = None
                     continue
-                mouse_info = parse_windows_mouse_event(win_con_event, last_click)
-                previous_mouse_info = mouse_info
-                if mouse_info.click != None:
-                    last_click = mouse_info.click
-                
-                on_mouse(mouse_info)
-
-                # test pour le click dans une zone de texte
-                if mouse_info.coord.x == 1 and mouse_info.coord.y and mouse_info.click != None and mouse_info.click.released:
-                    terminal.info.mouse_mode = False
-
+                current_mouse_info = parse_windows_mouse_event(win_con_event, last_click)
         else:
             terminal.info.last_byte = terminal.unix_getch()
 
@@ -143,21 +135,26 @@ def listen_to_input():
                 i += 1
 
                 if i == SEQ_LEN:
-                    mouse_info = parse_xterm_mouse_tracking_sequence(mouse_seq, last_click)
-                    previous_mouse_info = mouse_info
-                    if mouse_info.click != None:
-                        last_click = mouse_info.click
+                    current_mouse_info = parse_xterm_mouse_tracking_sequence(mouse_seq, last_click)
                     i = 0
 
-                    on_mouse(mouse_info)
+        if terminal.info.mouse_mode == True and current_mouse_info != None:
+            previous_mouse_info = current_mouse_info
+            if current_mouse_info.click != None:
+                last_click = current_mouse_info.click
 
-                    # test pour le click dans une zone de texte
-                    if mouse_info.coord.x == 1 and mouse_info.coord.y and mouse_info.click != None and mouse_info.click.released:
-                        terminal.info.mouse_mode = False
+            on_mouse(current_mouse_info)
 
-        if terminal.info.mouse_mode == False:
+            # test pour le click dans une zone de texte
+            if current_mouse_info.coord.x == 1 and current_mouse_info.coord.y == 1 and current_mouse_info.click != None and current_mouse_info.click.released:
+                terminal.info.mouse_mode = False
+
+            # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer 
+            # qu'aucun évènement n'est arrivé après celui-là, sauf au cas contraire (voire le code au dessus)
+            current_mouse_info = None
+
+        elif terminal.info.mouse_mode == False and terminal.info.last_byte == b'\x1b':
             # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
-            if terminal.info.last_byte == b'\x1b':
-                terminal.info.mouse_mode = True
+            terminal.info.mouse_mode = True
 
 input_process = Process(target=listen_to_input, name="InputProcess")
