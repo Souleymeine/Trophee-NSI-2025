@@ -107,7 +107,7 @@ def listen_to_input():
 
     # On initialise ici les variables dépendantes de la plateforme sujets à changement utilisées dans l'interprétation de l'entrée utilisateur
     if sys.platform == "win32":
-        win_con_event: PyINPUT_RECORDType
+        conin_event: PyINPUT_RECORDType
     else:
         TIME_THRESHOLD: Final[int] = 1 # miliseconds
         SEQ_LEN: Final[int] = 6
@@ -123,18 +123,18 @@ def listen_to_input():
 
     while True:
         if sys.platform == "win32":
-            win_con_event = terminal.info._conin.ReadConsoleInput(1)[0]
+            conin_event = terminal.info._conin.ReadConsoleInput(1)[0]
 
-            if win_con_event.EventType == win32console.KEY_EVENT and win_con_event.KeyDown:
-                encoded_char: bytes = win_con_event.Char.encode("utf-8")
+            if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
+                encoded_char: bytes = conin_event.Char.encode("utf-8")
                 terminal.info.last_byte = encoded_char
-                on_mouse(encoded_char)
+                on_key(encoded_char)
 
-            if terminal.info.mouse_mode == True and win_con_event.EventType == win32console.MOUSE_EVENT:
+            if terminal.info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
                 if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
                     last_click = None
                     continue
-                current_mouse_info = parse_windows_mouse_event(win_con_event, last_click)
+                current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
         else:
             if terminal.info.mouse_mode == True:
                 time_since_last_char = time.time()
@@ -184,7 +184,8 @@ def listen_to_input():
             if terminal.info.last_byte == b'\x1b':
                 # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
                 terminal.info.mouse_mode = True
-            else:
+            elif sys.platform != "win32":
+                # Windows envoie déjà un signal, en amont, comme on sait s'il vient du clavier ou de la souris
                 on_key(terminal.info.last_byte)
 
 
