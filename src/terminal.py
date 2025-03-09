@@ -12,12 +12,14 @@ if sys.platform == "win32":
     import win32con
 else:
     import termios
+import main
 import warnings
-
+import time
+import multiprocessing
 from data_types import Singleton
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, show_cursor, unset_altbuf, xterm_mouse_tracking
 
-class _Info(metaclass=Singleton):
+class Info(metaclass=Singleton):
     def __init__(self):
         self._mouse_mode = True
         self._last_byte = b''
@@ -25,6 +27,7 @@ class _Info(metaclass=Singleton):
         if sys.platform == "win32":
             # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
 
+            # Les différents mode: https://learn.microsoft.com/fr-fr/windows/console/setconsolemode
             ENABLE_EXTENDED_FLAGS = 0x0080
             ENABLE_QUICK_EDIT_MODE = 0x0040
 
@@ -32,11 +35,14 @@ class _Info(metaclass=Singleton):
                 win32file.CreateFile("CONIN$", win32file.GENERIC_READ | win32file.GENERIC_WRITE,
                     win32file.FILE_SHARE_WRITE, None, win32file.OPEN_ALWAYS, 0, None)
             )
-            self._conin.SetStdHandle(win32console.STD_INPUT_HANDLE)
 
-            self._conin_default_mode = self._conin.GetConsoleMode()
-            self._conin_text_mode = self._conin_default_mode & ~ENABLE_QUICK_EDIT_MODE
-            self._conin_mouse_mode = (self._conin_text_mode | win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS)
+            self._conin.SetStdHandle(win32console.STD_INPUT_HANDLE)
+            
+            self._conin_default_mode = 487
+            
+            self._conin_text_mode = (self._conin_default_mode | win32console.ENABLE_PROCESSED_INPUT) & ~ENABLE_QUICK_EDIT_MODE
+            self._conin_mouse_mode = win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS 
+
 
     @property
     def last_byte(self) -> bytes:
@@ -53,35 +59,32 @@ class _Info(metaclass=Singleton):
         self._mouse_mode = value
         if value == True:
             if sys.platform == "win32":
-                # le drapeau pour le mode souris désactive automatiquement l'écho
-                self.set_win_stdin_mode(self.conin_mouse_mode)
+                self.set_conin_mode(self.conin_mouse_mode)
             else:
                 self.set_posix_echo(False)
                 xterm_mouse_tracking(True)
             hide_cursor()
         else:
             if sys.platform == "win32":
-                self.set_win_stdin_mode(self.conin_text_mode)
+                self.set_conin_mode(self.conin_text_mode)
             else:
                 self.set_posix_echo(True)
                 xterm_mouse_tracking(False)
             show_cursor()
 
-    @property
-    def conin_default_mode(self) -> int:
-        return self._conin_default_mode
-    @property
-    def conin_text_mode(self) -> int:
-        return self._conin_text_mode
-    @property
-    def conin_mouse_mode(self) -> int:
-        return self._conin_mouse_mode
+    if sys.platform == "win32":
+        @property
+        def conin_default_mode(self) -> int:
+            return self._conin_default_mode
+        @property
+        def conin_text_mode(self) -> int:
+            return self._conin_text_mode
+        @property
+        def conin_mouse_mode(self) -> int:
+            return self._conin_mouse_mode
     
-    def set_win_stdin_mode(self, mode: int):
-        if sys.platform == "win32":
+        def set_conin_mode(self, mode: int):
             self._conin.SetConsoleMode(mode)
-        else:
-            warnings.warn("'set_win_stdin_mode' est une fonction exclusive à Windows.")
 
     # De https://gist.github.com/kgriffs/5726314
     def set_posix_echo(self, enabled: bool):
@@ -100,7 +103,7 @@ class _Info(metaclass=Singleton):
             warnings.warn("La méthode '_set_posix_echo' devrait être appelée sous les systèmes POSIX uniquement!")
 
 # Instance unique !
-info = _Info()
+info = Info()
 
 def unix_getch() -> bytes:
     """Retourne le dernier octet de stdin sous les systèmes POSIX"""
@@ -143,8 +146,8 @@ def init():
 def reset():
     """Rétablie l'était du terminal initial."""
     reset_style()
-    unset_altbuf()
+    # unset_altbuf()
     show_cursor()
     info.mouse_mode = False
     if sys.platform == "win32":
-        info.set_win_stdin_mode(info.conin_default_mode)
+        info.set_conin_mode(info.conin_default_mode)
