@@ -170,6 +170,8 @@ def listen_to_input():
             if current_mouse_info.click != None:
                 last_click = current_mouse_info.click
 
+            on_mouse(current_mouse_info)
+
             # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer 
             # qu'aucun évènement n'est arrivé après celui-là, sauf au cas contraire (voire le code au dessus)
             current_mouse_info = None
