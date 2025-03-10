@@ -16,14 +16,13 @@ from typing import Final
 from multiprocessing import Process
 import time
 
-
 def on_mouse(info: mouse.Info):
-    print("TEST: " + info, flush=True, end="")
-    gohome()
-    print("\x1b[0J", end="")
+    # TODO : Connecter les callback
+    pass
 
 def on_key(char: bytes):
-    print(char, end="", flush=True)
+    # TODO : Connecter les callback
+    pass
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
