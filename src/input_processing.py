@@ -14,12 +14,16 @@ from escape_sequences import gohome
 from data_types import Coord
 from typing import Final
 from multiprocessing import Process
+import time
 
 
 def on_mouse(info: mouse.Info):
     print(info, flush=True, end="")
     gohome()
     print("\x1b[0J", end="")
+
+def on_key(char: bytes):
+    print(char, end="", flush=True)
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
@@ -105,6 +109,7 @@ def listen_to_input():
     if sys.platform == "win32":
         win_con_event: PyINPUT_RECORDType
     else:
+        TIME_THRESHOLD: Final[int] = 1 # miliseconds
         SEQ_LEN: Final[int] = 6
         mouse_seq = [b''] * SEQ_LEN
         i = 0
@@ -114,13 +119,16 @@ def listen_to_input():
     previous_mouse_info = mouse.Info(None, None, Coord(0, 0), -1)
     current_mouse_info: mouse.Info | None = None
     last_click: mouse.Click | None = None
+    time_since_last_char = 0
 
     while True:
         if sys.platform == "win32":
             win_con_event = terminal.info._conin.ReadConsoleInput(1)[0]
 
             if win_con_event.EventType == win32console.KEY_EVENT and win_con_event.KeyDown:
-                terminal.info.last_byte = win_con_event.Char.encode("utf-8")
+                encoded_char: bytes = win_con_event.Char.encode("utf-8")
+                terminal.info.last_byte = encoded_char
+                on_mouse(encoded_char)
 
             if terminal.info.mouse_mode == True and win_con_event.EventType == win32console.MOUSE_EVENT:
                 if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
@@ -128,15 +136,33 @@ def listen_to_input():
                     continue
                 current_mouse_info = parse_windows_mouse_event(win_con_event, last_click)
         else:
+            if terminal.info.mouse_mode == True:
+                time_since_last_char = time.time()
+
             terminal.info.last_byte = terminal.unix_getch()
 
             if terminal.info.mouse_mode == True:
                 mouse_seq[i] = terminal.info.last_byte
+                
+                # TIME_THRESHOLD permet de déterminer si l'utilisateur rentre manuellement du texte ou non
+                # On observe le format pour définir si la séquence est valide
+                wrong_format: bool = (
+                    (time.time() - time_since_last_char >= TIME_THRESHOLD / 1000)
+                    or (i == 0 and mouse_seq[i] != b'\x1b') 
+                    or (i == 1 and mouse_seq[i] != b'[') 
+                    or (i == 2 and mouse_seq[i] != b'M')
+                )
+
+                if wrong_format:
+                    i = 0
+                    time_since_last_char = 0
+
                 i += 1
 
                 if i == SEQ_LEN:
                     current_mouse_info = parse_xterm_mouse_tracking_sequence(mouse_seq, last_click)
                     i = 0
+                    time_since_last_char = 0
 
         if terminal.info.mouse_mode == True and current_mouse_info != None:
             previous_mouse_info = current_mouse_info
