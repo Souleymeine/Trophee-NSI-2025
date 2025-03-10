@@ -10,12 +10,11 @@ import asyncio
 from TUI_elements.box import Box
 from TUI_elements.text_area import TextArea
 from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
-from escape_sequences import gohome, goto, ANSI_Styles
-from terminal import*
+from escape_sequences import gohome, ANSI_Styles
+import input_processing
+import terminal
 
-async def main():
-    init_term()
-
+async def show_notice_test(termsize: os.terminal_size):
     # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python
     notice_path = os.path.join(os.path.dirname(__file__), "../notice_aux_eleves.txt")
     with open(notice_path, "r", encoding="utf-8") as file:
@@ -36,8 +35,6 @@ async def main():
         ),
     )
 
-    termsize = os.get_terminal_size()
-
     for _ in range(termsize.columns - notice_text_area.box.dimentions.x):
         notice_text_area.box.dimentions.x += 1
         notice_text_area.draw()
@@ -46,13 +43,16 @@ async def main():
         sys.stdout.write("\x1b[2J")
     notice_text_area.draw()
 
-    goto(Coord(1, termsize.lines))
-    input("Appuie sur 'Entrer' pour quitter.")
 
-    reset_term()
+async def main():
+    terminal.init()
+
+    input_processing.input_process.start()
+    input_processing.input_process.join()
 
 def exit_gracefully(signum, frame):
-    reset_term()
+    input_processing.input_process.kill()
+    terminal.reset()
     sys.exit(0)
 
 if __name__ == "__main__":
