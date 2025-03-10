@@ -103,7 +103,9 @@ def listen_to_input():
     sys.stdin = os.fdopen(0)
 
     # Pour les séquences liées à xterm uniquement, cmd ou powershell n'en ont pas besoin
-    if sys.platform != "win32":
+    if sys.platform == "win32":
+        win_con_event: PyINPUT_RECORDType
+    else:
         SEQ_LEN: Final[int] = 6
         mouse_seq = [b''] * SEQ_LEN
         i = 0
@@ -114,17 +116,20 @@ def listen_to_input():
     last_click: mouse.Click | None = None
 
     while True:
-        if sys.platform != "win32":
+        if sys.platform == "win32":
+            win_con_event = terminal.info._conin.ReadConsoleInput(1)[0]
+            if win_con_event.EventType == win32console.KEY_EVENT and win_con_event.KeyDown:
+                terminal.info.last_byte = win_con_event.Char.encode("utf-8")
+        else:
             terminal.info.last_byte = terminal.unix_getch()
 
         if terminal.info.mouse_mode == True:
             if sys.platform == "win32":
-                event: PyINPUT_RECORDType = terminal.info._conin.ReadConsoleInput(1)[0]
-                if event.EventType == win32console.MOUSE_EVENT:
+                if win_con_event.EventType == win32console.MOUSE_EVENT:
                     if last_click != None and last_click.released: # Permet de prévenir le signal (move) après le relachement du click
                         last_click = None
                         continue
-                    mouse_info = parse_windows_mouse_event(event, last_click)
+                    mouse_info = parse_windows_mouse_event(win_con_event, last_click)
                     previous_mouse_info = mouse_info
                     if mouse_info.click != None:
                         last_click = mouse_info.click
@@ -152,14 +157,7 @@ def listen_to_input():
                         terminal.info.mouse_mode = False
         else:
             # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
-            if sys.platform == "win32":
-                event: PyINPUT_RECORDType = terminal.info._conin.ReadConsoleInput(1)[0]
-                if event.EventType == win32console.KEY_EVENT:
-                    if event.VirtualKeyCode == win32con.VK_ESCAPE:
-                        terminal.info.mouse_mode = True
-                        continue
-            else:
-                if terminal.info.last_byte == b'\x1b':
-                    terminal.info.mouse_mode = True
+            if terminal.info.last_byte == b'\x1b':
+                terminal.info.mouse_mode = True
 
 input_process = Process(target=listen_to_input, name="InputProcess")

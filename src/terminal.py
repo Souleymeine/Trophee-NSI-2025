@@ -61,14 +61,12 @@ class Info(metaclass=Singleton):
             if sys.platform == "win32":
                 self.set_conin_mode(self.conin_mouse_mode)
             else:
-                self.set_posix_echo(False)
                 xterm_mouse_tracking(True)
             hide_cursor()
         else:
             if sys.platform == "win32":
                 self.set_conin_mode(self.conin_text_mode)
             else:
-                self.set_posix_echo(True)
                 xterm_mouse_tracking(False)
             show_cursor()
 
@@ -86,54 +84,53 @@ class Info(metaclass=Singleton):
         def set_conin_mode(self, mode: int):
             self._conin.SetConsoleMode(mode)
 
-    # De https://gist.github.com/kgriffs/5726314
-    def set_posix_echo(self, enabled: bool):
-        """Active/Désactive l'affichage de l'entré de l'utilisateur.
-        Aussi utilsé pour interpréter les touches de clavier/souris sans afficher quoique ce soit."""
-        if sys.platform != "win32":
-            fd = sys.stdin.fileno()
-            new = termios.tcgetattr(fd)
-            if enabled:
-                new[3] |= termios.ECHO
-            else:
-                new[3] &= ~termios.ECHO
-
-            termios.tcsetattr(fd, termios.TCSANOW, new)
-        else:
-            warnings.warn("La méthode '_set_posix_echo' devrait être appelée sous les systèmes POSIX uniquement!")
 
 # Instance unique !
 info = Info()
 
-def unix_getch() -> bytes:
-    """Retourne le dernier octet de stdin sous les systèmes POSIX"""
-    if sys.platform != "win32":
-        # https://stackoverflow.com/questions/3523174/raw-input-without-pressing-enter
-        fd: int = sys.stdin.fileno()
-        orig = termios.tcgetattr(fd)
+# De https://gist.github.com/kgriffs/5726314
 
+if sys.platform != "win32":
+    def set_posix_echo(enabled: bool):
+        """Active/Désactive l'affichage de l'entré de l'utilisateur.
+        Aussi utilsé pour interpréter les touches de clavier/souris sans afficher quoique ce soit."""
+        fd = sys.stdin.fileno()
         new = termios.tcgetattr(fd)
-        new[3] &= ~termios.ICANON
-        new[6][termios.VMIN] = 1
-        new[6][termios.VTIME] = 0
+        if enabled:
+            new[3] |= termios.ECHO
+        else:
+            new[3] &= ~termios.ECHO
 
-        try:
-            termios.tcsetattr(fd, termios.TCSAFLUSH, new)
-            return sys.stdin.buffer.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
-    else:
-        warnings.warn("La méthode 'unix_getch' devrait être appelée sous les systèmes POSIX uniquement!")
-        return b'unix_getch : Mauvaise plateforme (windows)'
+        termios.tcsetattr(fd, termios.TCSANOW, new)
+
+    def unix_getch() -> bytes:
+        """Retourne le dernier octet de stdin sous les systèmes POSIX"""
+        if sys.platform != "win32":
+            # https://stackoverflow.com/questions/3523174/raw-input-without-pressing-enter
+            fd: int = sys.stdin.fileno()
+            orig = termios.tcgetattr(fd)
+
+            new = termios.tcgetattr(fd)
+            new[3] &= ~termios.ICANON
+            new[6][termios.VMIN] = 1
+            new[6][termios.VTIME] = 0
+
+            try:
+                termios.tcsetattr(fd, termios.TCSAFLUSH, new)
+                return sys.stdin.buffer.read(1)
+            finally:
+                termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
+
 
 def init():
     """Initialise le terminal pour supporter les séqunces d'échappement et les caractères spéciaux.
     Prépare également l'écran secondaire du terminal."""
-    
     # Merci à ce post qui m'a permis de ne pas tomber dans la folie après plusieurs jours de recherches.
     # https://stackoverflow.com/questions/12492810/python-how-can-i-make-the-ansi-escape-codes-to-work-also-in-windows
     if sys.platform == "win32":
         os.system("") # Magie...
+    else:
+        set_posix_echo(False)
 
     # NOTE : l'ordre de ces fonctions n'est pas anodin. 
     # Cacher le curseur après avoir activé l'écran alternatif le réaffichera.
@@ -149,5 +146,9 @@ def reset():
     # unset_altbuf()
     show_cursor()
     info.mouse_mode = False
+
     if sys.platform == "win32":
-        info.set_conin_mode(info.conin_default_mode)
+        info.set_conin_mode(info.conin_default_mode) 
+    else:
+        set_posix_echo(True)
+   
