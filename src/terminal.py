@@ -6,18 +6,12 @@
 import os
 import sys
 if sys.platform == "win32":
-    import msvcrt
     import win32console
     import win32file
-    import win32con
 else:
     import termios
-import main
-import warnings
-import time
-import multiprocessing
 from data_types import Singleton
-from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, show_cursor, unset_altbuf, xterm_mouse_tracking
+from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, show_cursor, xterm_mouse_tracking
 
 class Info(metaclass=Singleton):
     def __init__(self):
