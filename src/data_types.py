@@ -6,7 +6,6 @@
 from __future__ import annotations 
 from dataclasses import dataclass
 import math
-from decimal import Decimal
 
 # https://stackoverflow.com/questions/6760685/what-is-the-best-way-of-implementing-singleton-in-python
 class Singleton(type):

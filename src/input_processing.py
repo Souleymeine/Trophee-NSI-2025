@@ -10,7 +10,6 @@ if sys.platform == "win32":
 import os
 import mouse
 import terminal
-from escape_sequences import gohome
 from data_types import Coord
 from typing import Final
 from multiprocessing import Process
