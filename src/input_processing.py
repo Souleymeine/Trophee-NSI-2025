@@ -16,7 +16,7 @@ from multiprocessing import Process
 import time
 
 def on_mouse(info: mouse.Info):
-    # TODO : Connecter les callback
+    print(info)
     pass
 
 def on_key(char: bytes):
@@ -26,12 +26,33 @@ def on_key(char: bytes):
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
         """Analyse l'évènement renvoyé par le terminal et le formatte en un objet de type 'mouse.Info'"""
+        
+        # D'après https://learn.microsoft.com/fr-fr/windows/console/key-event-record-str
+        class _CmdMouseFlags(IntFlag):
+            RIGHT_ALT = 1
+            LEFT_ALT = 2
+            RIGHT_CTRL = 4
+            LEFT_CTRL = 8
+            SHIFT = 16
+            MOVE = 32
+        
         mouse_click = None
         mouse_button = None
         mouse_button_released = False
         mouse_wheel = None
         mouse_key_flags = 0
         
+        universal_flag: int = 0
+        if event.ControlKeyState & _CmdMouseFlags.RIGHT_CTRL or event.ControlKeyState & _CmdMouseFlags.LEFT_CTRL:
+            universal_flag += mouse.MouseKeyFlags.CTRL
+        if event.ControlKeyState & _CmdMouseFlags.SHIFT:
+            universal_flag += mouse.MouseKeyFlags.SHIFT
+        if event.ControlKeyState & _CmdMouseFlags.LEFT_ALT:
+            universal_flag += mouse.MouseKeyFlags.ALT
+        if event.ControlKeyState & _CmdMouseFlags.MOVE:
+            universal_flag += mouse.MouseKeyFlags.MOVE
+        mouse_key_flags += universal_flag
+
         if event.EventFlags & win32con.MOUSE_WHEELED:
             # Lorsque la molette est utilisée, la valeur avait l'air d'approcher les 2^32 et 2^31, un bitshift a fait l'affaire,
             # aucune idée de pourquoi ni comment mais ça m'a l'air d'être l'usage attendu...
@@ -51,7 +72,7 @@ if sys.platform == "win32":
             if mouse_button != None:
                 mouse_click = mouse.Click(mouse_button, mouse_button_released)
         
-        return mouse.Info(mouse_click, mouse_wheel, Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1), event.ControlKeyState)
+        return mouse.Info(mouse_click, mouse_wheel, Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1), mouse_key_flags)
 else:
     def parse_xterm_mouse_tracking_sequence(sequence: list[bytes], last_click: mouse.Click | None) -> mouse.Info:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
