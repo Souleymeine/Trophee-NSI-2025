@@ -128,7 +128,7 @@ def listen_to_input():
             if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
                 encoded_char: bytes = conin_event.Char.encode("utf-8")
                 terminal.info.last_byte = encoded_char
-                if encoded_char != b'\x1b':
+                if terminal.info.mouse_mode or (terminal.info.mouse_mode == False and encoded_char != b'\x1b'):
                     on_key(encoded_char)
 
             if terminal.info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
