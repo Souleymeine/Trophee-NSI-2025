@@ -92,11 +92,19 @@ else:
         mouse_button = None
         mouse_button_released = False
         mouse_wheel = None
-        mouse_key_flags = 0
+        mouse_key_flags: int = 0
 
+        xterm_mouse_key_flags = 0
         for flag in _XtermMouseFlags:
             if data[3] & flag != 0:
-                mouse_key_flags += flag
+                xterm_mouse_key_flags += flag
+
+        universal_flag: int = 0
+        if xterm_mouse_key_flags & _XtermMouseFlags.SHIFT: universal_flag += mouse.MouseKeyFlags.SHIFT
+        if xterm_mouse_key_flags & _XtermMouseFlags.ALT:   universal_flag += mouse.MouseKeyFlags.ALT
+        if xterm_mouse_key_flags & _XtermMouseFlags.CTRL:  universal_flag += mouse.MouseKeyFlags.CTRL
+        if xterm_mouse_key_flags & _XtermMouseFlags.MOVE:  universal_flag += mouse.MouseKeyFlags.MOVE
+        mouse_key_flags += universal_flag        
 
         match data[3] - mouse_key_flags:
             case 0:
