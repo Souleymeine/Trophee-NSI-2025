@@ -7,19 +7,12 @@ import signal
 import os
 import sys
 import asyncio
-import threading
-from typing import Final
 from TUI_elements.box import Box
 from TUI_elements.text_area import TextArea
 from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
-from escape_sequences import gohome, goto, ANSI_Styles
-import escape_sequences
-import mouse
-import time
+from escape_sequences import gohome, ANSI_Styles
 import input_processing
 import terminal
-from multiprocessing import Process, Lock
-import atexit
 
 async def show_notice_test(termsize: os.terminal_size):
     # De https://stackoverflow.com/questions/7165749/open-file-in-a-relative-location-in-python

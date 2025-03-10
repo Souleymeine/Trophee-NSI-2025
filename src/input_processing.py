@@ -18,7 +18,7 @@ import time
 
 
 def on_mouse(info: mouse.Info):
-    print(info, flush=True, end="")
+    print("TEST: " + info, flush=True, end="")
     gohome()
     print("\x1b[0J", end="")
 
@@ -145,6 +145,7 @@ def listen_to_input():
             if terminal.info.mouse_mode == True:
                 mouse_seq[i] = terminal.info.last_byte
                 
+                # TODO : Prendre en compte "\x1b" en mode souris
                 # TIME_THRESHOLD permet de déterminer si l'utilisateur rentre manuellement du texte ou non
                 # On observe le format pour définir si la séquence est valide
                 wrong_format: bool = (
@@ -170,12 +171,6 @@ def listen_to_input():
             previous_mouse_info = current_mouse_info
             if current_mouse_info.click != None:
                 last_click = current_mouse_info.click
-
-            on_mouse(current_mouse_info)
-
-            # test pour le click dans une zone de texte
-            if current_mouse_info.coord.x == 1 and current_mouse_info.coord.y == 1 and current_mouse_info.click != None and current_mouse_info.click.released:
-                terminal.info.mouse_mode = False
 
             # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer 
             # qu'aucun évènement n'est arrivé après celui-là, sauf au cas contraire (voire le code au dessus)
