@@ -147,13 +147,14 @@ def listen_to_input():
                 # TIME_THRESHOLD permet de déterminer si l'utilisateur rentre manuellement du texte ou non
                 # On observe le format pour définir si la séquence est valide
                 wrong_format: bool = (
-                    (time.time() - time_since_last_char >= TIME_THRESHOLD / 1000)
+                    (i != 0 and time.time() - time_since_last_char >= TIME_THRESHOLD / 1000)
                     or (i == 0 and mouse_seq[i] != b'\x1b') 
                     or (i == 1 and mouse_seq[i] != b'[') 
                     or (i == 2 and mouse_seq[i] != b'M')
                 )
 
                 if wrong_format:
+                    on_key(mouse_seq[i])
                     i = 0
                     time_since_last_char = 0
 
@@ -179,8 +180,12 @@ def listen_to_input():
             # qu'aucun évènement n'est arrivé après celui-là, sauf au cas contraire (voire le code au dessus)
             current_mouse_info = None
 
-        elif terminal.info.mouse_mode == False and terminal.info.last_byte == b'\x1b':
-            # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
-            terminal.info.mouse_mode = True
+        elif terminal.info.mouse_mode == False:
+            if terminal.info.last_byte == b'\x1b':
+                # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
+                terminal.info.mouse_mode = True
+            else:
+                on_key(terminal.info.last_byte)
+
 
 input_process = Process(target=listen_to_input, name="InputProcess")
