@@ -4,7 +4,6 @@
 from enum import IntFlag
 import sys
 if sys.platform == "win32":
-    import msvcrt
     import win32console
     from win32console import PyINPUT_RECORDType
     import win32con
@@ -102,7 +101,7 @@ def listen_to_input():
     # Nécessaire car le lancement d'un nouveau processus ferme stdin
     sys.stdin = os.fdopen(0)
 
-    # Pour les séquences liées à xterm uniquement, cmd ou powershell n'en ont pas besoin
+    # On initialise ici les variables dépendantes de la plateforme sujets à changement utilisées dans l'interprétation de l'entrée utilisateur
     if sys.platform == "win32":
         win_con_event: PyINPUT_RECORDType
     else:
@@ -120,26 +119,26 @@ def listen_to_input():
             win_con_event = terminal.info._conin.ReadConsoleInput(1)[0]
             if win_con_event.EventType == win32console.KEY_EVENT and win_con_event.KeyDown:
                 terminal.info.last_byte = win_con_event.Char.encode("utf-8")
+
+            if terminal.info.mouse_mode == True and win_con_event.EventType == win32console.MOUSE_EVENT:
+                if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
+                    last_click = None
+                    continue
+                mouse_info = parse_windows_mouse_event(win_con_event, last_click)
+                previous_mouse_info = mouse_info
+                if mouse_info.click != None:
+                    last_click = mouse_info.click
+                
+                on_mouse(mouse_info)
+
+                # test pour le click dans une zone de texte
+                if mouse_info.coord.x == 1 and mouse_info.coord.y and mouse_info.click != None and mouse_info.click.released:
+                    terminal.info.mouse_mode = False
+
         else:
             terminal.info.last_byte = terminal.unix_getch()
 
-        if terminal.info.mouse_mode == True:
-            if sys.platform == "win32":
-                if win_con_event.EventType == win32console.MOUSE_EVENT:
-                    if last_click != None and last_click.released: # Permet de prévenir le signal (move) après le relachement du click
-                        last_click = None
-                        continue
-                    mouse_info = parse_windows_mouse_event(win_con_event, last_click)
-                    previous_mouse_info = mouse_info
-                    if mouse_info.click != None:
-                        last_click = mouse_info.click
-                    
-                    on_mouse(mouse_info)
-
-                    # test pour le click dans une zone de texte
-                    if mouse_info.coord.x == 1 and mouse_info.coord.y and mouse_info.click != None and mouse_info.click.released:
-                        terminal.info.mouse_mode = False
-            else:
+            if terminal.info.mouse_mode == True:
                 mouse_seq[i] = terminal.info.last_byte
                 i += 1
 
@@ -155,7 +154,8 @@ def listen_to_input():
                     # test pour le click dans une zone de texte
                     if mouse_info.coord.x == 1 and mouse_info.coord.y and mouse_info.click != None and mouse_info.click.released:
                         terminal.info.mouse_mode = False
-        else:
+
+        if terminal.info.mouse_mode == False:
             # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
             if terminal.info.last_byte == b'\x1b':
                 terminal.info.mouse_mode = True
