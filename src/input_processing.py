@@ -24,34 +24,25 @@ def on_key(char: bytes):
     pass
 
 if sys.platform == "win32":
-    def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
+    def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None, previouse_mouse_info: mouse.Info | None ) -> mouse.Info:
         """Analyse l'évènement renvoyé par le terminal et le formatte en un objet de type 'mouse.Info'"""
         
-        # D'après https://learn.microsoft.com/fr-fr/windows/console/key-event-record-str
-        class _CmdMouseFlags(IntFlag):
-            RIGHT_ALT = 1
-            LEFT_ALT = 2
-            RIGHT_CTRL = 4
-            LEFT_CTRL = 8
-            SHIFT = 16
-            MOVE = 32
-        
+        mouse_coord = Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1)
         mouse_click = None
         mouse_button = None
         mouse_button_released = False
         mouse_wheel = None
-        mouse_key_flags = 0
+        mouse_flags = 0
         
-        universal_flag: int = 0
-        if event.ControlKeyState & _CmdMouseFlags.RIGHT_CTRL or event.ControlKeyState & _CmdMouseFlags.LEFT_CTRL:
-            universal_flag += mouse.MouseKeyFlags.CTRL
-        if event.ControlKeyState & _CmdMouseFlags.SHIFT:
-            universal_flag += mouse.MouseKeyFlags.SHIFT
-        if event.ControlKeyState & _CmdMouseFlags.LEFT_ALT:
-            universal_flag += mouse.MouseKeyFlags.ALT
-        if event.ControlKeyState & _CmdMouseFlags.MOVE:
-            universal_flag += mouse.MouseKeyFlags.MOVE
-        mouse_key_flags += universal_flag
+        # TODO : Trouver un 'match' qui fasse l'affaire
+        if event.ControlKeyState & win32con.RIGHT_CTRL_PRESSED or event.ControlKeyState & win32con.LEFT_CTRL_PRESSED:
+            mouse_flags += mouse.MouseKeyFlags.CTRL
+        if event.ControlKeyState & win32con.SHIFT_PRESSED:
+            mouse_flags += mouse.MouseKeyFlags.SHIFT
+        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:
+            mouse_flags += mouse.MouseKeyFlags.ALT
+        if event.EventFlags & win32con.MOUSE_MOVED:
+            mouse_flags += mouse.MouseKeyFlags.MOVE
 
         if event.EventFlags & win32con.MOUSE_WHEELED:
             # Lorsque la molette est utilisée, la valeur avait l'air d'approcher les 2^32 et 2^31, un bitshift a fait l'affaire,
@@ -59,11 +50,11 @@ if sys.platform == "win32":
             # Peut être ? https://learn.microsoft.com/fr-fr/windows/win32/api/winuser/nf-winuser-mouse_event
             mouse_wheel = mouse.Wheel(event.ButtonState >> 32 - 1)
         else:
-            if event.ButtonState & 1:
+            if event.ButtonState & win32con.FROM_LEFT_1ST_BUTTON_PRESSED:
                 mouse_button = mouse.Button.LEFT
-            elif event.ButtonState & 2:
+            elif event.ButtonState & win32con.RIGHTMOST_BUTTON_PRESSED:
                 mouse_button = mouse.Button.RIGHT
-            elif event.ButtonState & 4:
+            elif event.ButtonState & win32con.FROM_LEFT_2ND_BUTTON_PRESSED:
                 mouse_button = mouse.Button.MIDDLE
             elif event.ButtonState == 0 and (last_click != None and not last_click.released): # Aucun click enfoncé
                 mouse_button = last_click.button
@@ -72,7 +63,7 @@ if sys.platform == "win32":
             if mouse_button != None:
                 mouse_click = mouse.Click(mouse_button, mouse_button_released)
         
-        return mouse.Info(mouse_click, mouse_wheel, Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1), mouse_key_flags)
+        return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
 else:
     def parse_xterm_mouse_tracking_sequence(sequence: list[bytes], last_click: mouse.Click | None) -> mouse.Info:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
@@ -162,7 +153,13 @@ def listen_to_input():
                 if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
                     last_click = None
                     continue
-                current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
+
+                # TODO : ça marche, mais comment ?
+                moved_cell: bool = previous_mouse_info.coord != Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
+                clicked_still: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
+
+                if moved_cell ^ clicked_still:
+                    current_mouse_info = parse_windows_mouse_event(conin_event, last_click, previous_mouse_info)
         else:
             if terminal.info.mouse_mode == True:
                 time_since_last_char = time.time()
