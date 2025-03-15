@@ -7,21 +7,22 @@ if sys.platform == "win32":
     import win32console
     from win32console import PyINPUT_RECORDType
     import win32con
+else:
+    import fcntl
+    import multiprocessing
 import os
 import mouse
 import terminal
 from data_types import Coord
 from typing import Final
-from multiprocessing import Process
-import time
 
 def on_mouse(info: mouse.Info):
     print(info)
-    pass
 
 def on_key(char: bytes):
-    # TODO : Connecter les callback
-    pass
+    if terminal.info.mouse_mode == False and char == b'\x1b':
+        terminal.info.mouse_mode = True
+    print(char)
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None, previouse_mouse_info: mouse.Info | None ) -> mouse.Info:
@@ -65,11 +66,11 @@ if sys.platform == "win32":
         
         return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
 else:
-    def parse_xterm_mouse_tracking_sequence(sequence: list[bytes], last_click: mouse.Click | None) -> mouse.Info:
+    def parse_xterm_mouse_tracking_sequence(sequence: bytes, last_click: mouse.Click | None) -> mouse.Info:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
 
         # Convertie les caractères en valeures numériques
-        data = [int.from_bytes(byte) - 32 for byte in sequence]
+        data = [byte - 32 for byte in sequence]
 
         # Le code se réfère à ce format : https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
@@ -83,21 +84,19 @@ else:
         mouse_button = None
         mouse_button_released = False
         mouse_wheel = None
-        mouse_key_flags: int = 0
+        mouse_flags: int = 0
 
         xterm_mouse_key_flags = 0
         for flag in _XtermMouseFlags:
             if data[3] & flag != 0:
                 xterm_mouse_key_flags += flag
 
-        universal_flag: int = 0
-        if xterm_mouse_key_flags & _XtermMouseFlags.SHIFT: universal_flag += mouse.MouseKeyFlags.SHIFT
-        if xterm_mouse_key_flags & _XtermMouseFlags.ALT:   universal_flag += mouse.MouseKeyFlags.ALT
-        if xterm_mouse_key_flags & _XtermMouseFlags.CTRL:  universal_flag += mouse.MouseKeyFlags.CTRL
-        if xterm_mouse_key_flags & _XtermMouseFlags.MOVE:  universal_flag += mouse.MouseKeyFlags.MOVE
-        mouse_key_flags += universal_flag        
+        if xterm_mouse_key_flags & _XtermMouseFlags.SHIFT: mouse_flags += mouse.MouseKeyFlags.SHIFT
+        if xterm_mouse_key_flags & _XtermMouseFlags.ALT:   mouse_flags += mouse.MouseKeyFlags.ALT
+        if xterm_mouse_key_flags & _XtermMouseFlags.CTRL:  mouse_flags += mouse.MouseKeyFlags.CTRL
+        if xterm_mouse_key_flags & _XtermMouseFlags.MOVE:  mouse_flags += mouse.MouseKeyFlags.MOVE
 
-        match data[3] - mouse_key_flags:
+        match data[3] - mouse_flags:
             case 0:
                 mouse_button = mouse.Button.LEFT
             case 1:
@@ -116,28 +115,38 @@ else:
         if mouse_button != None:
             mouse_click = mouse.Click(mouse_button, mouse_button_released)
 
-        return mouse.Info(mouse_click, mouse_wheel, Coord(data[-2], data[-1]), mouse_key_flags)
+        return mouse.Info(mouse_click, mouse_wheel, Coord(data[-2], data[-1]), mouse_flags)
 
+
+# Après plusieurs jours de recherche, je suis tombé sur ce gestionnaire de contexte depuis le code source
+# du projet bpytop qui faisait exactement le comportement attendu sans processus ou timeout.
+# Pure magie pour l'instant. TODO : à démystifier
+# De : https://github.com/aristocratos/bpytop/blob/master/bpytop.py#L800
+class Nonblocking(object):
+	"""Set nonblocking mode for device"""
+	def __init__(self, stream):
+		self.stream = stream
+		self.fd = self.stream.fileno()
+	def __enter__(self):
+		self.orig_fl = fcntl.fcntl(self.fd, fcntl.F_GETFL)
+		fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl | os.O_NONBLOCK)
+	def __exit__(self, *_):
+		fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
 
 def listen_to_input():
-    # Nécessaire car le lancement d'un nouveau processus ferme stdin
     sys.stdin = os.fdopen(0)
-
     # On initialise ici les variables dépendantes de la plateforme sujets à changement utilisées dans l'interprétation de l'entrée utilisateur
     if sys.platform == "win32":
         conin_event: PyINPUT_RECORDType
     else:
-        TIME_THRESHOLD: Final[int] = 1 # miliseconds
-        SEQ_LEN: Final[int] = 6
-        mouse_seq = [b''] * SEQ_LEN
-        i = 0
+        SEQUENCE_LENGTH: Final[int] = 5
+        last_char: bytes = b''
 
     # On initialise les informations précédentes de la souris par des informations non valide, au cas où
     # Cette valeur sera changée à partir de la première intéraction
     previous_mouse_info = mouse.Info(None, None, Coord(0, 0), -1)
     current_mouse_info: mouse.Info | None = None
     last_click: mouse.Click | None = None
-    time_since_last_char = 0
 
     while True:
         if sys.platform == "win32":
@@ -161,35 +170,18 @@ def listen_to_input():
                 if moved_cell ^ clicked_still:
                     current_mouse_info = parse_windows_mouse_event(conin_event, last_click, previous_mouse_info)
         else:
-            if terminal.info.mouse_mode == True:
-                time_since_last_char = time.time()
+            last_char = terminal.unix_getch()
 
-            terminal.info.last_byte = terminal.unix_getch()
-
-            if terminal.info.mouse_mode == True:
-                mouse_seq[i] = terminal.info.last_byte
-                
-                # TODO : Prendre en compte "\x1b" en mode souris
-                # TIME_THRESHOLD permet de déterminer si l'utilisateur rentre manuellement du texte ou non
-                # On observe le format pour définir si la séquence est valide
-                wrong_format: bool = (
-                    (i != 0 and time.time() - time_since_last_char >= TIME_THRESHOLD / 1000)
-                    or (i == 0 and mouse_seq[i] != b'\x1b') 
-                    or (i == 1 and mouse_seq[i] != b'[') 
-                    or (i == 2 and mouse_seq[i] != b'M')
-                )
-
-                if wrong_format:
-                    on_key(mouse_seq[i])
-                    i = 0
-                    time_since_last_char = 0
-
-                i += 1
-
-                if i == SEQ_LEN:
-                    current_mouse_info = parse_xterm_mouse_tracking_sequence(mouse_seq, last_click)
-                    i = 0
-                    time_since_last_char = 0
+            if last_char == b'\x1b':
+                with Nonblocking(sys.stdin):
+                    read = sys.stdin.buffer.read(SEQUENCE_LENGTH)
+                    if read != None:
+                        byte_sequence = last_char + read
+                        current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
+                    else:
+                        on_key(last_char)
+            else:
+                on_key(last_char)
 
         if terminal.info.mouse_mode == True and current_mouse_info != None:
             previous_mouse_info = current_mouse_info
@@ -197,18 +189,7 @@ def listen_to_input():
                 last_click = current_mouse_info.click
 
             on_mouse(current_mouse_info)
-
-            # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer 
-            # qu'aucun évènement n'est arrivé après celui-là, sauf au cas contraire (voire le code au dessus)
+            # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer qu'aucun évènement n'est arrivé après celui-là.
             current_mouse_info = None
 
-        elif terminal.info.mouse_mode == False:
-            if terminal.info.last_byte == b'\x1b':
-                # Si le dernier caractère reçu pendant la frappe est 'échap', on quitte le mode texte
-                terminal.info.mouse_mode = True
-            elif sys.platform != "win32":
-                # Windows envoie déjà un signal, en amont, comme on sait s'il vient du clavier ou de la souris
-                on_key(terminal.info.last_byte)
-
-
-input_process = Process(target=listen_to_input, name="InputProcess")
+input_process = multiprocessing.Process(target=listen_to_input, name="InputProcess", daemon=False)

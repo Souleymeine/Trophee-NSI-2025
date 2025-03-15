@@ -12,7 +12,6 @@ import terminal
 async def main():
     terminal.init()
 
-    # TODO : Gérer d'une meilleur manière le processus en arrière-plan
     input_processing.input_process.start()
     input_processing.input_process.join()
 

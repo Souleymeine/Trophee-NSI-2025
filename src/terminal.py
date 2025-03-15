@@ -11,10 +11,11 @@ if sys.platform == "win32":
 else:
     import termios
 from data_types import Singleton
-from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, show_cursor, xterm_mouse_tracking
+from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
 
 class Info(metaclass=Singleton):
     def __init__(self):
+        self.listening_to_input = True
         self._mouse_mode = True
         self._last_byte = b''
 
@@ -37,13 +38,6 @@ class Info(metaclass=Singleton):
             self._conin_text_mode = (self._conin_default_mode | win32console.ENABLE_PROCESSED_INPUT) & ~ENABLE_QUICK_EDIT_MODE
             self._conin_mouse_mode = win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS 
 
-
-    @property
-    def last_byte(self) -> bytes:
-        return self._last_byte
-    @last_byte.setter
-    def last_byte(self, value: bytes):
-        self._last_byte = value
 
     @property
     def mouse_mode(self) -> bool:
@@ -132,15 +126,13 @@ def init():
     hide_cursor()
     gohome()
     info.mouse_mode = True
-    info.last_byte = b''
 
 def reset():
     """Rétablie l'était du terminal initial."""
     reset_style()
-    # unset_altbuf()
+    unset_altbuf()
     show_cursor()
     info.mouse_mode = False
-
     if sys.platform == "win32":
         info.set_conin_mode(info.conin_default_mode) 
     else:
