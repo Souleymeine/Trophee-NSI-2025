@@ -70,7 +70,7 @@ else:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
 
         # Convertie les caractères en valeures numériques
-        data = [byte - 32 for byte in sequence]
+        data: list[int] = [byte - 32 for byte in sequence]
 
         # Le code se réfère à ce format : https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
@@ -84,19 +84,18 @@ else:
         mouse_button = None
         mouse_button_released = False
         mouse_wheel = None
-        mouse_flags: int = 0
+        mouse_flags = 0
 
         xterm_mouse_key_flags = 0
         for flag in _XtermMouseFlags:
-            if data[3] & flag != 0:
+            if data[3] & flag:
                 xterm_mouse_key_flags += flag
+                # Ajoute le drapeau au nom correspondant entre _XtermMouseFlags et mouse.MouseKeyFlags
+                if flag.name != None:
+                    mouse_flags += mouse.MouseKeyFlags[flag.name].value
 
-        if xterm_mouse_key_flags & _XtermMouseFlags.SHIFT: mouse_flags += mouse.MouseKeyFlags.SHIFT
-        if xterm_mouse_key_flags & _XtermMouseFlags.ALT:   mouse_flags += mouse.MouseKeyFlags.ALT
-        if xterm_mouse_key_flags & _XtermMouseFlags.CTRL:  mouse_flags += mouse.MouseKeyFlags.CTRL
-        if xterm_mouse_key_flags & _XtermMouseFlags.MOVE:  mouse_flags += mouse.MouseKeyFlags.MOVE
-
-        match data[3] - mouse_flags:
+        button_flag = data[3] - xterm_mouse_key_flags
+        match button_flag:
             case 0:
                 mouse_button = mouse.Button.LEFT
             case 1:
@@ -139,7 +138,7 @@ def listen_to_input():
     if sys.platform == "win32":
         conin_event: PyINPUT_RECORDType
     else:
-        SEQUENCE_LENGTH: Final[int] = 5
+        SEQUENCE_LENGTH: Final[int] = 6
         last_char: bytes = b''
 
     # On initialise les informations précédentes de la souris par des informations non valide, au cas où
@@ -174,10 +173,14 @@ def listen_to_input():
 
             if last_char == b'\x1b':
                 with Nonblocking(sys.stdin):
-                    read = sys.stdin.buffer.read(SEQUENCE_LENGTH)
+                    read = sys.stdin.buffer.read(SEQUENCE_LENGTH - 1)
                     if read != None:
                         byte_sequence = last_char + read
-                        current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
+                        if len(byte_sequence) == SEQUENCE_LENGTH:
+                            current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
+                        else:
+                            # TODO: Gérer les autres séquences comme les flèches
+                            pass
                     else:
                         on_key(last_char)
             else:
