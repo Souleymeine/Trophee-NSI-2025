@@ -9,7 +9,7 @@ if sys.platform == "win32":
     import win32con
 else:
     import fcntl
-    import multiprocessing
+import multiprocessing
 import os
 import mouse
 import terminal
@@ -121,16 +121,17 @@ else:
 # du projet bpytop qui faisait exactement le comportement attendu sans processus ou timeout.
 # Pure magie pour l'instant. TODO : à démystifier
 # De : https://github.com/aristocratos/bpytop/blob/master/bpytop.py#L800
-class Nonblocking(object):
-	"""Set nonblocking mode for device"""
-	def __init__(self, stream):
-		self.stream = stream
-		self.fd = self.stream.fileno()
-	def __enter__(self):
-		self.orig_fl = fcntl.fcntl(self.fd, fcntl.F_GETFL)
-		fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl | os.O_NONBLOCK)
-	def __exit__(self, *_):
-		fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
+if sys.platform != "win32":
+    class Nonblocking(object):
+        """Set nonblocking mode for device"""
+        def __init__(self, stream):
+            self.stream = stream
+            self.fd = self.stream.fileno()
+        def __enter__(self):
+            self.orig_fl = fcntl.fcntl(self.fd, fcntl.F_GETFL)
+            fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl | os.O_NONBLOCK)
+        def __exit__(self, *_):
+            fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
 
 def listen_to_input():
     sys.stdin = os.fdopen(0)
@@ -139,10 +140,10 @@ def listen_to_input():
         conin_event: PyINPUT_RECORDType
     else:
         SEQUENCE_LENGTH: Final[int] = 6
-        last_char: bytes = b''
 
     # On initialise les informations précédentes de la souris par des informations non valide, au cas où
     # Cette valeur sera changée à partir de la première intéraction
+    last_char: bytes = b''
     previous_mouse_info = mouse.Info(None, None, Coord(0, 0), -1)
     current_mouse_info: mouse.Info | None = None
     last_click: mouse.Click | None = None
@@ -153,7 +154,7 @@ def listen_to_input():
 
             if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
                 encoded_char: bytes = conin_event.Char.encode("utf-8")
-                terminal.info.last_byte = encoded_char
+                last_char = encoded_char
                 if terminal.info.mouse_mode or (terminal.info.mouse_mode == False and encoded_char != b'\x1b'):
                     on_key(encoded_char)
 
