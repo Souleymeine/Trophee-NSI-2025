@@ -120,7 +120,7 @@ def init():
     set_altbuf()
     hide_cursor()
     gohome()
-    info.mouse_mode = False
+    info.mouse_mode = True
 
 def reset():
     """Rétablie l'était du terminal initial."""
