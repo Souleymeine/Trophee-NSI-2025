@@ -20,6 +20,7 @@ def clean_exit():
     terminal.reset()
     sys.exit(0)
 
+
 if sys.platform != "win32":
     def sigint_handler(signum, frame):
         clean_exit()
@@ -31,10 +32,6 @@ if __name__ == "__main__":
         except KeyboardInterrupt:
             clean_exit()
     else:
-        signal.signal(signal.SIGINT, clean_exit)  # Capture CTRL+C
+        signal.signal(signal.SIGINT, sigint_handler)  # Capture CTRL+C
         asyncio.run(main())
 
-
-# Enfaite ici ça dépends si on a des problèmes avec signal, parce que apparemment sur windows ça marche pas très bien.
-# except KeyboardInterrupt:
-# exit_gracefully()
