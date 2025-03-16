@@ -15,9 +15,7 @@ from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset
 
 class Info(metaclass=Singleton):
     def __init__(self):
-        self.listening_to_input = True
-        self._mouse_mode = True
-        self._last_byte = b''
+        self._mouse_mode = False
 
         if sys.platform == "win32":
             # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
@@ -73,12 +71,8 @@ class Info(metaclass=Singleton):
             self._conin.SetConsoleMode(mode)
 
 
-# Instance unique !
-info = Info()
-
-# De https://gist.github.com/kgriffs/5726314
-
 if sys.platform != "win32":
+    # De https://gist.github.com/kgriffs/5726314
     def set_posix_echo(enabled: bool):
         """Active/Désactive l'affichage de l'entré de l'utilisateur.
         Aussi utilsé pour interpréter les touches de clavier/souris sans afficher quoique ce soit."""
@@ -90,7 +84,6 @@ if sys.platform != "win32":
             new[3] &= ~termios.ECHO
 
         termios.tcsetattr(fd, termios.TCSANOW, new)
-
     def unix_getch() -> bytes:
         """Retourne le dernier octet de stdin sous les systèmes POSIX"""
         if sys.platform != "win32":
@@ -109,6 +102,8 @@ if sys.platform != "win32":
             finally:
                 termios.tcsetattr(fd, termios.TCSAFLUSH, orig)
 
+# Instance unique !
+info = Info()
 
 def init():
     """Initialise le terminal pour supporter les séqunces d'échappement et les caractères spéciaux.
@@ -125,7 +120,7 @@ def init():
     set_altbuf()
     hide_cursor()
     gohome()
-    info.mouse_mode = True
+    info.mouse_mode = False
 
 def reset():
     """Rétablie l'était du terminal initial."""
@@ -137,4 +132,4 @@ def reset():
         info.set_conin_mode(info.conin_default_mode) 
     else:
         set_posix_echo(True)
-   
+

@@ -16,6 +16,17 @@ import terminal
 from data_types import Coord
 from typing import Final
 
+
+def keyboard_interruptible(msg_on_ctr_c):
+    def decorator(function):
+        def wrapper():
+            try:
+                function()
+            except KeyboardInterrupt:
+                print(msg_on_ctr_c)
+        return wrapper
+    return decorator
+
 def on_mouse(info: mouse.Info):
     print(info)
 
@@ -148,53 +159,55 @@ def listen_to_input():
     current_mouse_info: mouse.Info | None = None
     last_click: mouse.Click | None = None
 
-    while True:
-        if sys.platform == "win32":
-            conin_event = terminal.info._conin.ReadConsoleInput(1)[0]
+    try:
+        while True:
+            if sys.platform == "win32":
+                conin_event = terminal.info._conin.ReadConsoleInput(1)[0]
 
-            if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
-                encoded_char: bytes = conin_event.Char.encode("utf-8")
-                last_char = encoded_char
-                # b'\x00' est reçu lorsque l'on presse alt ou ctrl, ce qui est inutile puisqu'on gère ces touches dans l'évènement de la souris.
-                if encoded_char != b'\x00' and terminal.info.mouse_mode or (terminal.info.mouse_mode == False and encoded_char != b'\x1b'):
-                    on_key(encoded_char)
-
-            if terminal.info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
-                if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
-                    last_click = None
-                    continue
-
-                # TODO : ça marche, mais comment ?
-                moved_cell: bool = previous_mouse_info.coord != Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
-                clicked_on_cell: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
-
-                if moved_cell ^ clicked_on_cell:
-                    current_mouse_info = parse_windows_mouse_event(conin_event, last_click, previous_mouse_info)
-        else:
-            last_char = terminal.unix_getch()
-
-            if last_char == b'\x1b':
-                with Nonblocking(sys.stdin):
-                    read = sys.stdin.buffer.read(SEQUENCE_LENGTH - 1)
-                    if read != None:
-                        byte_sequence = last_char + read
-                        if len(byte_sequence) == SEQUENCE_LENGTH:
-                            current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
-                        else:
-                            # TODO: Gérer les autres séquences comme les flèches
-                            pass
-                    else:
+                if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
+                    last_char = conin_event.Char.encode("utf-8")
+                    # b'\x00' est reçu lorsque l'on presse alt ou ctrl, ce qui est inutile puisqu'on gère ces touches avec 'conin_event'
+                    if last_char != b'\x00':
                         on_key(last_char)
+
+                if terminal.info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
+                    if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
+                        last_click = None
+                        continue
+
+                    # TODO : ça marche, mais comment ?
+                    moved_cell: bool = previous_mouse_info.coord != Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
+                    clicked_on_cell: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
+
+                    if moved_cell ^ clicked_on_cell:
+                        current_mouse_info = parse_windows_mouse_event(conin_event, last_click, previous_mouse_info)
             else:
-                on_key(last_char)
+                last_char = terminal.unix_getch()
 
-        if terminal.info.mouse_mode == True and current_mouse_info != None:
-            previous_mouse_info = current_mouse_info
-            if current_mouse_info.click != None:
-                last_click = current_mouse_info.click
+                if last_char == b'\x1b':
+                    with Nonblocking(sys.stdin):
+                        read = sys.stdin.buffer.read(SEQUENCE_LENGTH - 1)
+                        if read != None:
+                            byte_sequence = last_char + read
+                            if len(byte_sequence) == SEQUENCE_LENGTH:
+                                current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
+                            else:
+                                # TODO: Gérer les autres séquences comme les flèches
+                                pass
+                        else:
+                            on_key(last_char)
+                else:
+                    on_key(last_char)
 
-            on_mouse(current_mouse_info)
-            # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer qu'aucun évènement n'est arrivé après celui-là.
-            current_mouse_info = None
+            if terminal.info.mouse_mode == True and current_mouse_info != None:
+                previous_mouse_info = current_mouse_info
+                if current_mouse_info.click != None:
+                    last_click = current_mouse_info.click
 
-input_process = multiprocessing.Process(target=listen_to_input, name="InputProcess", daemon=False)
+                on_mouse(current_mouse_info)
+                # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer qu'aucun évènement n'est arrivé après celui-là.
+                current_mouse_info = None
+
+    except KeyboardInterrupt:
+        pass
+input_process = multiprocessing.Process(target=listen_to_input, name="InputProcess", daemon=True)
