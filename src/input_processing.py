@@ -122,12 +122,10 @@ else:
 
         return mouse.Info(mouse_click, mouse_wheel, Coord(data[-2], data[-1]), mouse_flags)
 
-
-# Après plusieurs jours de recherche, je suis tombé sur ce gestionnaire de contexte depuis le code source
-# du projet bpytop qui faisait exactement le comportement attendu sans processus ou timeout.
-# Pure magie pour l'instant. TODO : à démystifier
-# De : https://github.com/aristocratos/bpytop/blob/master/bpytop.py#L800
-if sys.platform != "win32":
+    # Après plusieurs jours de recherche, je suis tombé sur ce gestionnaire de contexte depuis le code source
+    # du projet bpytop qui faisait exactement le comportement attendu sans processus ou timeout.
+    # Pure magie pour l'instant. TODO : à démystifier
+    # De : https://github.com/aristocratos/bpytop/blob/master/bpytop.py#L800
     class Nonblocking(object):
         """Set nonblocking mode for device"""
         def __init__(self, stream):
@@ -138,6 +136,7 @@ if sys.platform != "win32":
             fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl | os.O_NONBLOCK)
         def __exit__(self, *_):
             fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
+
 
 def listen_to_input():
     sys.stdin = os.fdopen(0)
@@ -186,6 +185,7 @@ def listen_to_input():
                         read = sys.stdin.buffer.read(SEQUENCE_LENGTH - 1)
                         if read != None:
                             byte_sequence = last_char + read
+                            print(byte_sequence)
                             if len(byte_sequence) == SEQUENCE_LENGTH:
                                 current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
                             else:
