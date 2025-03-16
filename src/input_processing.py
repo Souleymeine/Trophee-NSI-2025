@@ -194,6 +194,8 @@ def listen_to_input():
                         else:
                             on_key(last_char)
                 else:
+                    # CTRL + ESPACE renvoie \x00, on le convertie en ' ' plus classique
+                    if last_char == b'\x00': last_char = b' '
                     on_key(last_char)
 
             if terminal.info.mouse_mode == True and current_mouse_info != None:
@@ -207,4 +209,5 @@ def listen_to_input():
 
     except KeyboardInterrupt:
         pass
+
 input_process = multiprocessing.Process(target=listen_to_input, name="InputProcess", daemon=True)
