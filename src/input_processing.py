@@ -192,7 +192,7 @@ def listen_to_input():
                                 # TODO: Gérer les autres séquences comme les flèches
                                 pass
                         else:
-                            on_key(last_char)
+                            on_key(b'\x1b')
                 else:
                     # CTRL + ESPACE renvoie \x00, on le convertie en ' ' plus classique
                     if last_char == b'\x00': last_char = b' '
