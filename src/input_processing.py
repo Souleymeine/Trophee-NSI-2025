@@ -155,7 +155,8 @@ def listen_to_input():
             if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
                 encoded_char: bytes = conin_event.Char.encode("utf-8")
                 last_char = encoded_char
-                if terminal.info.mouse_mode or (terminal.info.mouse_mode == False and encoded_char != b'\x1b'):
+                # b'\x00' est reçu lorsque l'on presse alt ou ctrl, ce qui est inutile puisqu'on gère ces touches dans l'évènement de la souris.
+                if encoded_char != b'\x00' and terminal.info.mouse_mode or (terminal.info.mouse_mode == False and encoded_char != b'\x1b'):
                     on_key(encoded_char)
 
             if terminal.info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
@@ -165,9 +166,9 @@ def listen_to_input():
 
                 # TODO : ça marche, mais comment ?
                 moved_cell: bool = previous_mouse_info.coord != Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
-                clicked_still: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
+                clicked_on_cell: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
 
-                if moved_cell ^ clicked_still:
+                if moved_cell ^ clicked_on_cell:
                     current_mouse_info = parse_windows_mouse_event(conin_event, last_click, previous_mouse_info)
         else:
             last_char = terminal.unix_getch()
