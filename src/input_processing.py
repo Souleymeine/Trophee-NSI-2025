@@ -142,7 +142,7 @@ def listen_to_input():
         SEQUENCE_LENGTH: Final[int] = 6
 
     # On initialise les informations précédentes de la souris par des informations non valide, au cas où
-    # Cette valeur sera changée à partir de la première intéraction
+    # Ces valeurs seront changées à partir de la première intéraction
     last_char: bytes = b''
     previous_mouse_info = mouse.Info(None, None, Coord(0, 0), -1)
     current_mouse_info: mouse.Info | None = None
