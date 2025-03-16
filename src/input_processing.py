@@ -16,24 +16,19 @@ import terminal
 from data_types import Coord
 from typing import Final
 
-
-def keyboard_interruptible(msg_on_ctr_c):
-    def decorator(function):
-        def wrapper():
-            try:
-                function()
-            except KeyboardInterrupt:
-                print(msg_on_ctr_c)
-        return wrapper
-    return decorator
-
 def on_mouse(info: mouse.Info):
     print(info)
 
 def on_key(char: bytes):
     if terminal.info.mouse_mode == False and char == b'\x1b':
         terminal.info.mouse_mode = True
-    print(char)
+    # TODO: Créer un fichier contenant toutes les définitions de caractères spéciaux
+    BACKSPACE = b'\x08'
+    DELETE    = b'\x7f'
+    if sys.platform != "win32": # Les deux touches sont inversé sur POSIX
+        BACKSPACE, DELETE = DELETE, BACKSPACE
+
+    print(f"decoded: \"{char.decode('utf-8')}\", raw: {char}")
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None, previouse_mouse_info: mouse.Info | None ) -> mouse.Info:
@@ -166,6 +161,8 @@ def listen_to_input():
 
                 if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
                     last_char = conin_event.Char.encode("utf-8")
+                    # \r est reçu à la place \n (sauf si CTRL + entrer)
+                    if last_char == b'\r': last_char = b'\n'
                     # b'\x00' est reçu lorsque l'on presse alt ou ctrl, ce qui est inutile puisqu'on gère ces touches avec 'conin_event'
                     if last_char != b'\x00':
                         on_key(last_char)
