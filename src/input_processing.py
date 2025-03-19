@@ -166,8 +166,8 @@ def listen_to_input():
                 conin_event = terminal.info._conin.ReadConsoleInput(1)[0]
 
                 if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
-                    last_char = conin_event.Char.encode("utf-8")
-                    # \r est reçu à la place \n (sauf si CTRL + entrer)
+                    last_char = str.encode(conin_event.Char)
+                    # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
                     if last_char == b'\r': last_char = b'\n'
                     if last_char != b'\x00':
                         on_key(last_char)
@@ -177,7 +177,6 @@ def listen_to_input():
                         last_click = None
                         continue
 
-                    # TODO : ça marche, mais comment ?
                     moved_cell: bool = previous_mouse_info.coord != Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
                     clicked_on_cell: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
 
