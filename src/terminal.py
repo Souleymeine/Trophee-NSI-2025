@@ -10,10 +10,10 @@ if sys.platform == "win32":
     import win32file
 else:
     import termios
-from data_types import Singleton
+from data_types import EnsureSingle
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
 
-class Info(metaclass=Singleton):
+class Info(metaclass=EnsureSingle):
     def __init__(self):
         self._mouse_mode = False
 
