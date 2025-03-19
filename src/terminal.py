@@ -13,11 +13,17 @@ else:
 from data_types import EnsureSingle
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
 
+
 class Info(metaclass=EnsureSingle):
     def __init__(self):
-        self._mouse_mode = False
 
         if sys.platform == "win32":
+            # FIXME : BUG !!! La classe est initialisée deux fois sur windows car le processus "InputProcess" n'a pas accès au processus principale.
+            # Cela se manifeste en bug que l'humanité n'était pas censée connaître.
+            # Plus sérieusement la copie de cette classe ne sera pas la même sur les deux processus, d'où le fait qu'on "hardcode" certaines valeurs ici. 
+            # -> https://docs.python.org/fr/3.13/library/multiprocessing.html#contexts-and-start-methods
+            self._mouse_mode = True
+
             # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
 
             # Les différents mode: https://learn.microsoft.com/fr-fr/windows/console/setconsolemode
