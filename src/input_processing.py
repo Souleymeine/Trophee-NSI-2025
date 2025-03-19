@@ -200,7 +200,11 @@ def listen_to_input():
                         else:
                             on_key(b'\x1b')
                 else:
-                    on_key(last_char)
+                    if int.from_bytes(last_char) >= (2**7 - 1): # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
+                        second_part = sys.stdin.buffer.read(1)
+                        on_key(last_char + second_part)
+                    else:
+                        on_key(last_char)
 
             if terminal.info.mouse_mode == True and current_mouse_info != None:
                 previous_mouse_info = current_mouse_info
