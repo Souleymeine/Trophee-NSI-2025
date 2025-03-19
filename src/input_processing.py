@@ -7,6 +7,7 @@ if sys.platform == "win32":
     import win32console
     from win32console import PyINPUT_RECORDType
     import win32con
+    from ctypes import c_long
 else:
     import fcntl
 import multiprocessing
@@ -25,16 +26,18 @@ def on_key(char: bytes):
     # TODO: Créer un fichier contenant toutes les définitions de caractères spéciaux
     BACKSPACE = b'\x08'
     DELETE    = b'\x7f'
-    if sys.platform != "win32": # Les deux touches sont inversé sur POSIX
+    if sys.platform != "win32": # Les deux touches sont inversées sur Xterm
         BACKSPACE, DELETE = DELETE, BACKSPACE
 
     print(f"decoded: \"{char.decode('utf-8')}\", raw: {char}")
 
 if sys.platform == "win32":
-    def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None, previouse_mouse_info: mouse.Info | None ) -> mouse.Info:
+    def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
         """Analyse l'évènement renvoyé par le terminal et le formatte en un objet de type 'mouse.Info'"""
         
-        mouse_coord = Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1)
+        # Le code se réfère à ce format: https://learn.microsoft.com/fr-fr/windows/console/mouse-event-record-str
+
+        mouse_coord = Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1) # On ajoute 1 pour coller au système de coordonnées Unix qui commence à la cellule 1, 1
         mouse_click = None
         mouse_button = None
         mouse_button_released = False
@@ -42,20 +45,22 @@ if sys.platform == "win32":
         mouse_flags = 0
         
         # TODO : Trouver un 'match' qui fasse l'affaire
-        if event.ControlKeyState & win32con.RIGHT_CTRL_PRESSED or event.ControlKeyState & win32con.LEFT_CTRL_PRESSED:
-            mouse_flags += mouse.MouseKeyFlags.CTRL
-        if event.ControlKeyState & win32con.SHIFT_PRESSED:
-            mouse_flags += mouse.MouseKeyFlags.SHIFT
-        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:
-            mouse_flags += mouse.MouseKeyFlags.ALT
-        if event.EventFlags & win32con.MOUSE_MOVED:
-            mouse_flags += mouse.MouseKeyFlags.MOVE
+        class _CmdMouseFlags(IntFlag):
+            MOVE = win32con.MOUSE_MOVED
+            SHIFT = win32con.SHIFT_PRESSED
+            ALT = win32con.LEFT_ALT_PRESSED
+            CTRL = win32con.LEFT_CTRL_PRESSED
+
+        cmd_mouse_key_flags = 0
+        for flag in _CmdMouseFlags:
+            if event.ControlKeyState & flag:
+                cmd_mouse_key_flags += flag
+                # Ajoute le drapeau au nom correspondant entre _CmdMouseFlags et mouse.MouseKeyFlags
+                if flag.name != None:
+                    mouse_flags += mouse.MouseKeyFlags[flag.name].value
 
         if event.EventFlags & win32con.MOUSE_WHEELED:
-            # Lorsque la molette est utilisée, la valeur avait l'air d'approcher les 2^32 et 2^31, un bitshift a fait l'affaire,
-            # aucune idée de pourquoi ni comment mais ça m'a l'air d'être l'usage attendu...
-            # Peut être ? https://learn.microsoft.com/fr-fr/windows/win32/api/winuser/nf-winuser-mouse_event
-            mouse_wheel = mouse.Wheel(event.ButtonState >> 32 - 1)
+            mouse_wheel = mouse.Wheel(c_long(event.ButtonState).value < 0)
         else:
             if event.ButtonState & win32con.FROM_LEFT_1ST_BUTTON_PRESSED:
                 mouse_button = mouse.Button.LEFT
@@ -141,6 +146,7 @@ else:
 
 
 def listen_to_input():
+    # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
     sys.stdin = os.fdopen(0)
     # On initialise ici les variables dépendantes de la plateforme sujets à changement utilisées dans l'interprétation de l'entrée utilisateur
     if sys.platform == "win32":
