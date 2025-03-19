@@ -169,7 +169,6 @@ def listen_to_input():
                     last_char = conin_event.Char.encode("utf-8")
                     # \r est reçu à la place \n (sauf si CTRL + entrer)
                     if last_char == b'\r': last_char = b'\n'
-                    # b'\x00' est reçu lorsque l'on presse alt ou ctrl, ce qui est inutile puisqu'on gère ces touches avec 'conin_event'
                     if last_char != b'\x00':
                         on_key(last_char)
 
@@ -199,7 +198,7 @@ def listen_to_input():
                                 pass
                         else:
                             on_key(b'\x1b')
-                else:
+                elif last_char != b'\x00':
                     if int.from_bytes(last_char) >= (2**7 - 1): # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
                         second_part = sys.stdin.buffer.read(1)
                         on_key(last_char + second_part)
