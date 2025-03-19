@@ -185,8 +185,7 @@ def listen_to_input():
                         read = sys.stdin.buffer.read(SEQUENCE_LENGTH - 1)
                         if read != None:
                             byte_sequence = last_char + read
-                            print(byte_sequence)
-                            if len(byte_sequence) == SEQUENCE_LENGTH:
+                            if len(byte_sequence) == SEQUENCE_LENGTH and byte_sequence[2] == ord('M'): # La séquence se démarque par un M majuscule
                                 current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
                             else:
                                 # TODO: Gérer les autres séquences comme les flèches
