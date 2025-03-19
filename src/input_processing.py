@@ -207,6 +207,7 @@ def listen_to_input():
                 current_mouse_info = None
 
     except KeyboardInterrupt:
+        # Géré dans main.py
         pass
 
 input_process = multiprocessing.Process(target=listen_to_input, name="InputProcess", daemon=True)
