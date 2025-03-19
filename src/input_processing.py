@@ -76,7 +76,7 @@ else:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
 
         # Convertie les caractères en valeures numériques
-        data: list[int] = [byte - 32 for byte in sequence]
+        data: list[int] = [byte - 32 for byte in sequence[3:]]
 
         # Le code se réfère à ce format : https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
@@ -86,6 +86,7 @@ else:
             CTRL = 16
             MOVE = 32
 
+        mouse_coord = Coord(data[-2], data[-1])
         mouse_click = None
         mouse_button = None
         mouse_button_released = False
@@ -94,13 +95,13 @@ else:
 
         xterm_mouse_key_flags = 0
         for flag in _XtermMouseFlags:
-            if data[3] & flag:
+            if data[0] & flag:
                 xterm_mouse_key_flags += flag
                 # Ajoute le drapeau au nom correspondant entre _XtermMouseFlags et mouse.MouseKeyFlags
                 if flag.name != None:
                     mouse_flags += mouse.MouseKeyFlags[flag.name].value
 
-        button_flag = data[3] - xterm_mouse_key_flags
+        button_flag = data[0] - xterm_mouse_key_flags
         match button_flag:
             case 0:
                 mouse_button = mouse.Button.LEFT
@@ -110,6 +111,7 @@ else:
                 mouse_button = mouse.Button.RIGHT
             case 3: # Aucun click enfoncé
                 mouse_button_released = True
+                # On cherche le dernier click enfoncé pour trouvé le bouton correspondant
                 if last_click != None and not last_click.released:
                     mouse_button = last_click.button
             case 64:
@@ -120,7 +122,7 @@ else:
         if mouse_button != None:
             mouse_click = mouse.Click(mouse_button, mouse_button_released)
 
-        return mouse.Info(mouse_click, mouse_wheel, Coord(data[-2], data[-1]), mouse_flags)
+        return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
 
     # Après plusieurs jours de recherche, je suis tombé sur ce gestionnaire de contexte depuis le code source
     # du projet bpytop qui faisait exactement le comportement attendu sans processus ou timeout.
@@ -193,8 +195,6 @@ def listen_to_input():
                         else:
                             on_key(b'\x1b')
                 else:
-                    # CTRL + ESPACE renvoie \x00, on le convertie en ' ' plus classique
-                    if last_char == b'\x00': last_char = b' '
                     on_key(last_char)
 
             if terminal.info.mouse_mode == True and current_mouse_info != None:
