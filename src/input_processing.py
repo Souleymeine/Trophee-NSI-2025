@@ -80,7 +80,7 @@ else:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
 
         # Convertie les caractères en valeures numériques
-        data: list[int] = [byte - 32 for byte in sequence[3:]]
+        data: list[int] = [byte - 32 for byte in sequence[1:]]
 
         # Le code se réfère à ce format : https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
@@ -151,7 +151,7 @@ def listen_to_input():
     if sys.platform == "win32":
         conin_event: PyINPUT_RECORDType
     else:
-        SEQUENCE_LENGTH: Final[int] = 6
+        SEQUENCE_LENGTH: Final[int] = 5
 
     # On initialise les informations précédentes de la souris par des informations non valide, au cas où
     # Ces valeurs seront changées à partir de la première intéraction
@@ -189,11 +189,11 @@ def listen_to_input():
 
                 if last_char == b'\x1b':
                     with Nonblocking(sys.stdin):
-                        read = sys.stdin.buffer.read(SEQUENCE_LENGTH - 1)
+                        read = sys.stdin.buffer.read(SEQUENCE_LENGTH)
                         if read != None:
-                            byte_sequence = last_char + read
-                            if len(byte_sequence) == SEQUENCE_LENGTH and byte_sequence[2] == ord('M'): # La séquence se démarque par un M majuscule
-                                current_mouse_info = parse_xterm_mouse_tracking_sequence(byte_sequence, last_click)
+                            read = bytes(read)
+                            if len(read) == SEQUENCE_LENGTH and read[1] == ord('M'): # La séquence se démarque par un M majuscule
+                                current_mouse_info = parse_xterm_mouse_tracking_sequence(read[1:], last_click)
                             else:
                                 # TODO: Gérer les autres séquences comme les flèches
                                 pass
