@@ -44,15 +44,14 @@ if sys.platform == "win32":
         mouse_wheel = None
         mouse_flags = 0
         
-        # TODO : Trouver un 'match' qui fasse l'affaire
-        class _CmdMouseFlags(IntFlag):
+        class _Win32MouseFlags(IntFlag):
             MOVE = win32con.MOUSE_MOVED
             SHIFT = win32con.SHIFT_PRESSED
             ALT = win32con.LEFT_ALT_PRESSED
             CTRL = win32con.LEFT_CTRL_PRESSED
 
         cmd_mouse_key_flags = 0
-        for flag in _CmdMouseFlags:
+        for flag in _Win32MouseFlags:
             if event.ControlKeyState & flag:
                 cmd_mouse_key_flags += flag
                 # Ajoute le drapeau au nom correspondant entre _CmdMouseFlags et mouse.MouseKeyFlags
@@ -184,7 +183,7 @@ def listen_to_input():
                     clicked_on_cell: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
 
                     if moved_cell ^ clicked_on_cell:
-                        current_mouse_info = parse_windows_mouse_event(conin_event, last_click, previous_mouse_info)
+                        current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
             else:
                 last_char = terminal.unix_getch()
 
