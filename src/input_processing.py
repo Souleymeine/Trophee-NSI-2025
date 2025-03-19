@@ -184,6 +184,7 @@ def listen_to_input():
                         current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
             else:
                 last_char = terminal.unix_getch()
+                print(last_char)
 
                 if last_char == b'\x1b':
                     with Nonblocking(sys.stdin):
@@ -198,9 +199,10 @@ def listen_to_input():
                         else:
                             on_key(b'\x1b')
                 elif last_char != b'\x00':
-                    if int.from_bytes(last_char) >= (2**7 - 1): # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
-                        second_part = sys.stdin.buffer.read(1)
-                        on_key(last_char + second_part)
+                    if int.from_bytes(last_char) >= (2**7): # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
+                        second_char = sys.stdin.buffer.read(1)
+                        assert second_char != None, "Caractère innatendu"
+                        on_key(last_char + second_char)
                     else:
                         on_key(last_char)
 
