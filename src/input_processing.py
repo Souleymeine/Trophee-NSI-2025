@@ -186,7 +186,7 @@ def listen_to_input(term_info: TerminalInfoProxy):
                                 # TODO: Gérer les autres séquences comme les flèches
                                 pass
                         else:
-                            on_key(b'\x1b')
+                            on_key(b'\x1b', term_info)
                 elif last_char != b'\x00':
                     # Convertie b'\x08' en b'\x7f' et b'\x7f' en b'\x08'
                     last_char = b'\x08' if last_char == b'\x7f' else b'\x7f' if last_char == b'\x08' else last_char
@@ -194,9 +194,9 @@ def listen_to_input(term_info: TerminalInfoProxy):
                     if int.from_bytes(last_char) >= (2**7): # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
                         second_char = sys.stdin.buffer.read(1)
                         assert second_char != None, "Caractère innatendu"
-                        on_key(last_char + second_char)
+                        on_key(last_char + second_char, term_info)
                     else:
-                        on_key(last_char)
+                        on_key(last_char, term_info)
 
             if term_info.mouse_mode == True and current_mouse_info != None:
                 previous_mouse_info = current_mouse_info

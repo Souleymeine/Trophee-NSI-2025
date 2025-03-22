@@ -6,14 +6,14 @@
 import sys
 from typing import cast
 if sys.platform == "win32":
-    import win32console
     import win32file
+    import win32console
+    from win32console import PyConsoleScreenBufferType
 else:
     import termios
 from data_types import EnsureSingle
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
 from multiprocessing.managers import BaseManager, BaseProxy
-from win32console import PyConsoleScreenBufferType
 
 
 if sys.platform == "win32":
