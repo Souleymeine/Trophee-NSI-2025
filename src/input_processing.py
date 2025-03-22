@@ -4,25 +4,24 @@
 from enum import IntFlag
 import sys
 if sys.platform == "win32":
-    import win32console
-    from win32console import PyINPUT_RECORDType
-    import win32con
+    import win32console, win32con
     from ctypes import c_long
+    from terminal import MockPyINPUT_RECORDType
 else:
     import fcntl
-import multiprocessing
 import os
 import mouse
 import terminal
 from data_types import Coord
 from typing import Final
+from terminal import TerminalInfoProxy
 
 def on_mouse(info: mouse.Info):
     print(info)
 
-def on_key(char: bytes):
-    if terminal.info.mouse_mode == False and char == b'\x1b':
-        terminal.info.mouse_mode = True
+def on_key(char: bytes, term_info: TerminalInfoProxy):
+    if term_info.mouse_mode == False and char == b'\x1b':
+        term_info.mouse_mode = True
     # TODO: Créer un fichier contenant toutes les définitions de caractères spéciaux
     BACKSPACE = b'\x08'
     DELETE    = b'\x7f'
@@ -32,31 +31,22 @@ def on_key(char: bytes):
     print(f"decoded: \"{char.decode('utf-8')}\", raw: {char}")
 
 if sys.platform == "win32":
-    def parse_windows_mouse_event(event: PyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
+    def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
         """Analyse l'évènement renvoyé par le terminal et le formatte en un objet de type 'mouse.Info'"""
         
         # Le code se réfère à ce format: https://learn.microsoft.com/fr-fr/windows/console/mouse-event-record-str
 
-        mouse_coord = Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1) # On ajoute 1 pour coller au système de coordonnées Unix qui commence à la cellule 1, 1
+        mouse_coord = Coord(event.MousePosition.X + 1, event.MousePosition.Y + 1) # On ajoute 1 pour coller au système de coordonnées Xterm qui commence à la cellule 1, 1
         mouse_click = None
         mouse_button = None
         mouse_button_released = False
         mouse_wheel = None
         mouse_flags = 0
-        
-        class _Win32MouseFlags(IntFlag):
-            MOVE = win32con.MOUSE_MOVED
-            SHIFT = win32con.SHIFT_PRESSED
-            ALT = win32con.LEFT_ALT_PRESSED
-            CTRL = win32con.LEFT_CTRL_PRESSED
 
-        cmd_mouse_key_flags = 0
-        for flag in _Win32MouseFlags:
-            if event.ControlKeyState & flag:
-                cmd_mouse_key_flags += flag
-                # Ajoute le drapeau au nom correspondant entre _CmdMouseFlags et mouse.MouseKeyFlags
-                if flag.name != None:
-                    mouse_flags += mouse.MouseKeyFlags[flag.name].value
+        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: mouse_flags += mouse.MouseKeyFlags.CTRL
+        if event.ControlKeyState & win32con.SHIFT_PRESSED:     mouse_flags += mouse.MouseKeyFlags.SHIFT
+        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  mouse_flags += mouse.MouseKeyFlags.ALT
+        if event.EventFlags & win32con.MOUSE_MOVED:            mouse_flags += mouse.MouseKeyFlags.MOVE
 
         if event.EventFlags & win32con.MOUSE_WHEELED:
             mouse_wheel = mouse.Wheel(c_long(event.ButtonState).value < 0)
@@ -144,12 +134,12 @@ else:
             fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
 
 
-def listen_to_input():
+def listen_to_input(term_info: TerminalInfoProxy):
     # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
     sys.stdin = os.fdopen(0)
     # On initialise ici les variables dépendantes de la plateforme sujets à changement utilisées dans l'interprétation de l'entrée utilisateur
     if sys.platform == "win32":
-        conin_event: PyINPUT_RECORDType
+        conin_event: MockPyINPUT_RECORDType
     else:
         SEQUENCE_LENGTH: Final[int] = 5
 
@@ -163,17 +153,23 @@ def listen_to_input():
     try:
         while True:
             if sys.platform == "win32":
-                conin_event = terminal.info._conin.ReadConsoleInput(1)[0]
+                # On utilise une version simplifiée de PyINPUT_RECORDType facilement communicable entre processus, les champs restent les mêmes
+                conin_event = term_info.read_conin()
 
+                # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
+                
                 if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
                     last_char = str.encode(conin_event.Char)
                     # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
                     if last_char == b'\r': last_char = b'\n'
                     if last_char != b'\x00':
-                        on_key(last_char)
+                        on_key(last_char, term_info)
 
-                if terminal.info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
-                    if last_click != None and last_click.released: # Permet de prévenir le signal "move" après le relachement du click
+                if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
+                    move_event_after_button_release: bool = last_click != None and last_click.released
+                    # Windows envoie automatiquement un signal "MOVE" après le relachement de la souris
+                    # Si c'est le cas de notre évènement, on l'ignore en passant à la prochaine itération de la boucle
+                    if move_event_after_button_release:
                         last_click = None
                         continue
 
@@ -184,7 +180,6 @@ def listen_to_input():
                         current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
             else:
                 last_char = terminal.unix_getch()
-                print(last_char)
 
                 if last_char == b'\x1b':
                     with Nonblocking(sys.stdin):
@@ -199,6 +194,9 @@ def listen_to_input():
                         else:
                             on_key(b'\x1b')
                 elif last_char != b'\x00':
+                    # Convertie b'\x08' en b'\x7f' et b'\x7f' en b'\x08'
+                    last_char = b'\x08' if last_char == b'\x7f' else b'\x7f' if last_char == b'\x08' else last_char
+
                     if int.from_bytes(last_char) >= (2**7): # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
                         second_char = sys.stdin.buffer.read(1)
                         assert second_char != None, "Caractère innatendu"
@@ -206,7 +204,7 @@ def listen_to_input():
                     else:
                         on_key(last_char)
 
-            if terminal.info.mouse_mode == True and current_mouse_info != None:
+            if term_info.mouse_mode == True and current_mouse_info != None:
                 previous_mouse_info = current_mouse_info
                 if current_mouse_info.click != None:
                     last_click = current_mouse_info.click
@@ -219,4 +217,3 @@ def listen_to_input():
         # Géré dans main.py
         pass
 
-input_process = multiprocessing.Process(target=listen_to_input, name="InputProcess", daemon=True)

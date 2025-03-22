@@ -33,7 +33,6 @@ class Coord:
     x : int
     y : int
 
-
 class Vec3d:
     def __init__(self, x: int | float, y: int | float, z: int | float):
         self.x = x
