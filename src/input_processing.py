@@ -5,7 +5,6 @@ from enum import IntFlag
 import sys
 if sys.platform == "win32":
     import win32console, win32con
-    from ctypes import c_long
     from terminal import MockPyINPUT_RECORDType
 else:
     import fcntl
@@ -43,19 +42,17 @@ if sys.platform == "win32":
         if event.EventFlags & win32con.MOUSE_MOVED:            mouse_flags += mouse.MouseKeyFlags.MOVE
 
         if event.EventFlags & win32con.MOUSE_WHEELED:
-            mouse_wheel = mouse.Wheel(c_long(event.ButtonState).value < 0)
+            mouse_wheel = mouse.Wheel(event.ButtonState >> 2**5 - 1 > 0)
         else:
-            if event.ButtonState & win32con.FROM_LEFT_1ST_BUTTON_PRESSED:
-                mouse_button = mouse.Button.LEFT
-            elif event.ButtonState & win32con.RIGHTMOST_BUTTON_PRESSED:
-                mouse_button = mouse.Button.RIGHT
-            elif event.ButtonState & win32con.FROM_LEFT_2ND_BUTTON_PRESSED:
-                mouse_button = mouse.Button.MIDDLE
-            elif event.ButtonState == 0 and (last_click != None and not last_click.released): # Aucun click enfoncé
+            if   event.ButtonState & win32con.FROM_LEFT_1ST_BUTTON_PRESSED: mouse_button = mouse.Button.LEFT
+            elif event.ButtonState & win32con.RIGHTMOST_BUTTON_PRESSED:     mouse_button = mouse.Button.RIGHT
+            elif event.ButtonState & win32con.FROM_LEFT_2ND_BUTTON_PRESSED: mouse_button = mouse.Button.MIDDLE
+            elif event.ButtonState == 0 and (last_click is not None and last_click.released == False): # Aucun click enfoncé
+                # On cherche le dernier click enfoncé pour trouvé le bouton correspondant
                 mouse_button = last_click.button
                 mouse_button_released = True
             
-            if mouse_button != None:
+            if mouse_button is not None:
                 mouse_click = mouse.Click(mouse_button, mouse_button_released)
         
         return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
@@ -91,21 +88,16 @@ else:
 
         button_flag = data[0] - xterm_mouse_key_flags
         match button_flag:
-            case 0:
-                mouse_button = mouse.Button.LEFT
-            case 1:
-                mouse_button = mouse.Button.MIDDLE
-            case 2:
-                mouse_button = mouse.Button.RIGHT
+            case 64: mouse_wheel = mouse.Wheel.SCROLL_UP
+            case 65: mouse_wheel = mouse.Wheel.SCROLL_DOWN
+            case 0: mouse_button = mouse.Button.LEFT
+            case 1: mouse_button = mouse.Button.MIDDLE
+            case 2: mouse_button = mouse.Button.RIGHT
             case 3: # Aucun click enfoncé
                 mouse_button_released = True
                 # On cherche le dernier click enfoncé pour trouvé le bouton correspondant
                 if last_click != None and not last_click.released:
                     mouse_button = last_click.button
-            case 64:
-                mouse_wheel = mouse.Wheel.SCROLL_UP
-            case 65:
-                mouse_wheel = mouse.Wheel.SCROLL_DOWN
 
         if mouse_button != None:
             mouse_click = mouse.Click(mouse_button, mouse_button_released)
@@ -137,7 +129,6 @@ def listen_to_input(term_info: TerminalInfoProxy):
     else:
         SEQUENCE_LENGTH: Final[int] = 5
 
-    # On initialise les informations précédentes de la souris par des informations non valide, au cas où
     # Ces valeurs seront changées à partir de la première intéraction
     last_char: bytes = b''
     previous_mouse_info: mouse.Info | None = None
@@ -164,15 +155,16 @@ def listen_to_input(term_info: TerminalInfoProxy):
                     # Certains évènement inutiles et non désirés sont envoyés par Windows. Parmis eux, 
                     # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir relacher un click
                     # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir déplacer la souris à l'intérieur même d'une cellule
-                    # Les deux booléens moved_cell et clicked_on_cell ci dessous, une fois exclus mutuellement (avec l'opérateur '^' ou XOR) retourne True 
+                    # Les deux booléens moved_on_cell et clicked_on_cell ci dessous, une fois exclus mutuellement (avec l'opérateur '^' ou XOR) retourne True 
                     # uniquement lorsqu'un changement d'état non inutile a été détecté.
+                    # C'était un bien long paragraphe pour parler de filtres.
 
                     current_mouse_coord = Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
-                    mouse_button_used: bool = conin_event.ButtonState != 0
+                    mouse_button_pressed: bool = conin_event.ButtonState != 0
                     moved_for_the_first_time: bool = (previous_mouse_info is None and bool(conin_event.EventFlags & win32con.MOUSE_MOVED))
 
                     moved_on_cell: bool = moved_for_the_first_time or (previous_mouse_info is not None and previous_mouse_info.coord != current_mouse_coord)
-                    clicked_on_cell: bool = (mouse_button_used or (last_click is not None and not last_click.released)) and bool(conin_event.EventFlags & win32con.MOUSE_MOVED) == False
+                    clicked_on_cell: bool = (mouse_button_pressed or (last_click is not None and last_click.released == False)) and bool(conin_event.EventFlags & win32con.MOUSE_MOVED) == False
                     
                     if moved_on_cell ^ clicked_on_cell:
                         current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
