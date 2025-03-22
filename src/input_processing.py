@@ -140,7 +140,7 @@ def listen_to_input(term_info: TerminalInfoProxy):
     # On initialise les informations précédentes de la souris par des informations non valide, au cas où
     # Ces valeurs seront changées à partir de la première intéraction
     last_char: bytes = b''
-    previous_mouse_info = mouse.Info(None, None, Coord(0, 0), -1)
+    previous_mouse_info: mouse.Info | None = None
     current_mouse_info: mouse.Info | None = None
     last_click: mouse.Click | None = None
 
@@ -156,21 +156,25 @@ def listen_to_input(term_info: TerminalInfoProxy):
                     last_char = str.encode(conin_event.Char)
                     # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
                     if last_char == b'\r': last_char = b'\n'
+
                     if last_char != b'\x00':
                         on_key(last_char, term_info)
 
                 if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
-                    move_event_after_button_release: bool = last_click != None and last_click.released
-                    # Windows envoie automatiquement un signal "MOVE" après le relachement de la souris
-                    # Si c'est le cas de notre évènement, on l'ignore en passant à la prochaine itération de la boucle
-                    if move_event_after_button_release:
-                        last_click = None
-                        continue
+                    # Certains évènement inutiles et non désirés sont envoyés par Windows. Parmis eux, 
+                    # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir relacher un click
+                    # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir déplacer la souris à l'intérieur même d'une cellule
+                    # Les deux booléens moved_cell et clicked_on_cell ci dessous, une fois exclus mutuellement (avec l'opérateur '^' ou XOR) retourne True 
+                    # uniquement lorsqu'un changement d'état non inutile a été détecté.
 
-                    moved_cell: bool = previous_mouse_info.coord != Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
-                    clicked_on_cell: bool = (conin_event.ButtonState != 0 or (last_click != None and not last_click.released)) and not conin_event.EventFlags & win32con.MOUSE_MOVED
+                    current_mouse_coord = Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
+                    mouse_button_used: bool = conin_event.ButtonState != 0
+                    moved_for_the_first_time: bool = (previous_mouse_info is None and bool(conin_event.EventFlags & win32con.MOUSE_MOVED))
 
-                    if moved_cell ^ clicked_on_cell:
+                    moved_on_cell: bool = moved_for_the_first_time or (previous_mouse_info is not None and previous_mouse_info.coord != current_mouse_coord)
+                    clicked_on_cell: bool = (mouse_button_used or (last_click is not None and not last_click.released)) and bool(conin_event.EventFlags & win32con.MOUSE_MOVED) == False
+                    
+                    if moved_on_cell ^ clicked_on_cell:
                         current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
             else:
                 last_char = terminal.unix_getch()
