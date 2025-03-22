@@ -22,7 +22,6 @@ def on_mouse(info: mouse.Info):
 def on_key(char: bytes, term_info: TerminalInfoProxy):
     if term_info.mouse_mode == False and char == b'\x1b':
         term_info.mouse_mode = True
-
     print(f"decoded: \"{char.decode('utf-8')}\", raw: {char}")
 
 if sys.platform == "win32":
