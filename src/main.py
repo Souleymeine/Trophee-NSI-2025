@@ -3,28 +3,54 @@
 # Projet : pyscape
 # Auteurs : Rabta Souleymeine
 
+import multiprocessing
 import signal
 import sys
+import os
 import asyncio
 import input_processing
 import terminal
+from terminal import Info, TerminalInfoManager, TerminalInfoProxy
+from multiprocessing import Process
 
 async def main():
-    terminal.init()
+    terminal.init(shared_terminal_state)
+    
+    input_process.start()
+    input_process.join()
 
-    # TODO : Gérer d'une meilleur manière le processus en arrière-plan
-    input_processing.input_process.start()
-    input_processing.input_process.join()
+def clean_exit():
+    input_process.kill()
 
-def exit_gracefully(signum, frame):
-    input_processing.input_process.kill()
-    terminal.reset()
+    terminal.reset(shared_terminal_state)
+    terminal_info_manager.shutdown()
+
     sys.exit(0)
 
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, exit_gracefully)  # Capture CTRL+C
-    asyncio.run(main())
+if sys.platform != "win32":
+    def sigint_handler(signum, frame):
+        clean_exit()
 
-# Enfaite ici ça dépends si on a des problèmes avec signal, parce que apparemment sur windows ça marche pas très bien.
-# except KeyboardInterrupt:
-# exit_gracefully()
+if __name__ == "__main__":
+    # NOTE : l'ordre des instructions suivantes est important !
+    # Merci à ce post qui m'a permis de ne pas tomber dans la folie après plusieurs jours de recherches.
+    # https://stackoverflow.com/questions/12492810/python-how-can-i-make-the-ansi-escape-codes-to-work-also-in-windows
+    if sys.platform == "win32":
+        os.system("") # Magie...
+
+    terminal_info_manager = TerminalInfoManager()
+    terminal_info_manager.register('Info', Info, TerminalInfoProxy)
+    terminal_info_manager.start()
+    shared_terminal_state = terminal_info_manager.Info() # type: ignore
+
+    input_process = Process(target=input_processing.listen_to_input, args=(shared_terminal_state,), name="InputProcess", daemon=True)
+
+    if sys.platform == "win32":
+        try:
+            asyncio.run(main())
+        except KeyboardInterrupt:
+            clean_exit()
+    else:
+        signal.signal(signal.SIGINT, sigint_handler)  # Capture CTRL+C
+        asyncio.run(main())
+

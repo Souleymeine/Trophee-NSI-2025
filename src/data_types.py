@@ -8,13 +8,14 @@ from dataclasses import dataclass
 import math
 
 # https://stackoverflow.com/questions/6760685/what-is-the-best-way-of-implementing-singleton-in-python
-class Singleton(type):
-    """Les classes utilisant 'Singleton' comme 'metaclass' n'auront qu'une seule instance."""
-    _instances = {}
+# Dérivé du lien au dessus
+class EnsureSingle(type):
+    """Les classes utilisant 'EnsureSingle' comme 'metaclass' retournent une erreur si elles sont initalisées plus d'une fois."""
+    _single_instance = True
     def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+        assert cls._single_instance == True, f"La classe {cls.__name__} a été instancié plus d'une fois."
+        cls._single_instance = False
+        return super(EnsureSingle, cls).__call__(*args, **kwargs)
 
 @dataclass
 class RGB:
@@ -31,7 +32,6 @@ class Coord:
     """
     x : int
     y : int
-
 
 class Vec3d:
     def __init__(self, x: int | float, y: int | float, z: int | float):
