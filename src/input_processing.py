@@ -22,11 +22,6 @@ def on_mouse(info: mouse.Info):
 def on_key(char: bytes, term_info: TerminalInfoProxy):
     if term_info.mouse_mode == False and char == b'\x1b':
         term_info.mouse_mode = True
-    # TODO: Créer un fichier contenant toutes les définitions de caractères spéciaux
-    BACKSPACE = b'\x08'
-    DELETE    = b'\x7f'
-    if sys.platform != "win32": # Les deux touches sont inversées sur Xterm
-        BACKSPACE, DELETE = DELETE, BACKSPACE
 
     print(f"decoded: \"{char.decode('utf-8')}\", raw: {char}")
 
