@@ -39,10 +39,10 @@ if sys.platform == "win32":
         mouse_wheel = None
         mouse_flags = 0
 
-        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: mouse_flags += MouseKeyFlags.CTRL
-        if event.ControlKeyState & win32con.SHIFT_PRESSED:     mouse_flags += MouseKeyFlags.SHIFT
-        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  mouse_flags += MouseKeyFlags.ALT
-        if event.EventFlags & win32con.MOUSE_MOVED:            mouse_flags += MouseKeyFlags.MOVE
+        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: mouse_flags |= MouseKeyFlags.CTRL
+        if event.ControlKeyState & win32con.SHIFT_PRESSED:     mouse_flags |= MouseKeyFlags.SHIFT
+        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  mouse_flags |= MouseKeyFlags.ALT
+        if event.EventFlags & win32con.MOUSE_MOVED:            mouse_flags |= MouseKeyFlags.MOVE
 
         if event.EventFlags & win32con.MOUSE_WHEELED:
             mouse_wheel = MouseWheel(event.ButtonState >> 2**5 - 1 > 0)
@@ -68,6 +68,8 @@ if sys.platform == "win32":
         char = event.Char.encode()
         if flag & KeyFlags.CTRL:
             char = (int.from_bytes(char) + 2**6 + 2**5).to_bytes()
+            if flag & KeyFlags.SHIFT:
+                char = char.upper()
 
         return KeyInfo(char, flag)
     def parse_windows_arrow_event(event: MockPyINPUT_RECORDType) -> ArrowInfo | None:
