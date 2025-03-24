@@ -61,11 +61,11 @@ if sys.platform == "win32":
     def parse_windows_key_event(event: MockPyINPUT_RECORDType) -> KeyInfo:
         char = event.Char.encode()
 
-        is_char_unmodifianle_key: bool = (char != b'\x1b' and char != b'\x7f' and char != b'\x08')
-
         # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
         if char == b'\r':
             char = b'\n'
+
+        is_char_unmodifianle_key: bool = (char != b'\x1b' and char != b'\x7f' and char != b'\x08' and char != b'\n')
 
         flag: int = 0
         if is_char_unmodifianle_key:
@@ -155,7 +155,7 @@ else:
             return ArrowInfo(arrow, arrow_flags)
 
     def parse_xterm_key(char: bytes, sequence: bool) -> KeyInfo | None:
-        if char != b'\t' and char != b'\x1b' and char != b'\x08' and char != b'\x7f':
+        if char != b'\t' and char != b'\x1b' and char != b'\x08' and char != b'\x7f' and char != b'\n':
             if int.from_bytes(char) <= 26: # Caractères spéciaux précédents les caractères normaux, dans ce contexte : CTRL + A-Z
                 offset_char = (int.from_bytes(char) + 2**6 + 2**5).to_bytes()
                 flags = KeyFlags.CTRL | (KeyFlags.ALT if sequence else 0) | (KeyFlags.SHIFT if offset_char.isupper() else 0)
@@ -278,6 +278,7 @@ def listen_to_input(term_info: TerminalInfoProxy):
             elif current_char != b'\x00':
                 # Convertie b'\x08' en b'\x7f' et b'\x7f' en b'\x08'
                 current_char = b'\x08' if current_char == b'\x7f' else b'\x7f' if current_char == b'\x08' else current_char
+                current_char = b'\n' if current_char == b'\r' else current_char
                 current_key_info = parse_xterm_key(current_char, False)
 
         if current_mouse_info is not None:
