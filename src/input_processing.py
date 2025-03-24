@@ -171,9 +171,7 @@ else:
         return KeyInfo(char, KeyFlags.SHIFT if char.isupper() else 0)
     
     def is_mouse_sequence(sequence: bytes) -> bool:
-        SEQUENCE_LENGTH: Final[int] = 5
-
-        if len(sequence) != SEQUENCE_LENGTH:
+        if len(sequence) != 5:
             return False
         valid_mouse_CSI: bool = (sequence[0:2] == b'[M')
         valid_coord: bool = (sequence[3] - 2**5 >= 1 and sequence[4] - 2**5 >= 1)
@@ -224,11 +222,6 @@ else:
 def listen_to_input(term_info: TerminalInfoProxy):
     # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
     sys.stdin = os.fdopen(0)
-    # On initialise ici les variables dépendantes de la plateforme sujets à changement utilisées dans l'interprétation de l'entrée utilisateur
-    if sys.platform == "win32":
-        conin_event: MockPyINPUT_RECORDType
-    else:
-        SEQUENCE_LENGTH: Final[int] = 5
 
     # Ces valeurs seront changées à partir de la première intéraction
     previous_mouse_info: MouseInfo | None = None
@@ -272,7 +265,7 @@ def listen_to_input(term_info: TerminalInfoProxy):
 
             if current_char == b'\x1b':
                 with Nonblocking(sys.stdin):
-                    read = sys.stdin.buffer.read(SEQUENCE_LENGTH)
+                    read = sys.stdin.buffer.read(5)
                     if read != None:
                         read = bytes(read)
                         if is_mouse_sequence(read):
