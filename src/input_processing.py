@@ -13,12 +13,12 @@ from data_types import Coord
 from terminal import TerminalInfoProxy
 from input_properties import *
 
-
 def on_mouse(info: MouseInfo):
     print(info, end="\n\r")
 def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
-    if term_info.mouse_mode == False and info.char == b'\x1b':
-        term_info.mouse_mode = True
+    if info.char == b'\x1b':
+        terminal.reset(term_info)
+        sys.exit(0)
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
     print(info, end="\n\r")
 
