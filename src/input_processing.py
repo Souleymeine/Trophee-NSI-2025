@@ -130,22 +130,21 @@ else:
 
         return MouseInfo(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
     def parse_xterm_arrow_sequence(sequence: bytes) -> ArrowInfo | None:
-        arrow: Arrows | None = None
+        arrow = None
         match sequence[-1].to_bytes():
             case b'A': arrow = Arrows.UP
             case b'B': arrow = Arrows.DOWN
             case b'C': arrow = Arrows.RIGHT
             case b'D': arrow = Arrows.LEFT
-        if arrow is None:
-            return None # Séquence non reconnue.
 
         arrow_flags: int = 0
         if sequence[0].to_bytes() == b'1':
             for flag in XtermKeyFlags:
                 if sequence[2] - sequence[0] & flag and flag.name is not None:
-                    arrow_flags |= KeyFlags[flag.name].value
+                    arrow_flags |= KeyFlags(KeyFlags[flag.name].value)
 
-        return ArrowInfo(arrow, arrow_flags)
+        if arrow is not None:
+            return ArrowInfo(arrow, arrow_flags)
 
     def parse_xterm_key(char: bytes, sequence: bool) -> KeyInfo | None:
         if char != b'\t' and char != b'\x1b' and char != b'\x08' and char != b'\x7f':
