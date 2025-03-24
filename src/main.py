@@ -30,6 +30,10 @@ def clean_exit():
 if sys.platform != "win32":
     def sigint_handler(signum, frame):
         clean_exit()
+    def sigstop_handler(signum, frame):
+        # On ignore le signal
+        # TODO : Gérer CTRL + Z
+        pass
 
 if __name__ == "__main__":
     # NOTE : l'ordre des instructions suivantes est important !
@@ -52,5 +56,6 @@ if __name__ == "__main__":
             clean_exit()
     else:
         signal.signal(signal.SIGINT, sigint_handler)  # Capture CTRL+C
+        signal.signal(signal.SIGTSTP, sigstop_handler)
         asyncio.run(main())
 
