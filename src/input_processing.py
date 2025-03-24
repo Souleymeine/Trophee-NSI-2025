@@ -78,7 +78,7 @@ if sys.platform == "win32":
         if event.ControlKeyState & win32con.SHIFT_PRESSED:     flag |= KeyFlags.SHIFT
         if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  flag |= KeyFlags.ALT
 
-        arrow = None
+        arrow: Arrows | None = None
         match event.VirtualKeyCode:
             case 37: arrow = Arrows.LEFT
             case 38: arrow = Arrows.UP
@@ -130,7 +130,7 @@ else:
 
         return MouseInfo(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
     def parse_xterm_arrow_sequence(sequence: bytes) -> ArrowInfo | None:
-        arrow = None
+        arrow: Arrows | None = None
         match sequence[-1].to_bytes():
             case b'A': arrow = Arrows.UP
             case b'B': arrow = Arrows.DOWN
