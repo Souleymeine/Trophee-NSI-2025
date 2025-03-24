@@ -45,7 +45,7 @@ if sys.platform == "win32":
         if event.EventFlags & win32con.MOUSE_MOVED:            mouse_flags += MouseKeyFlags.MOVE
 
         if event.EventFlags & win32con.MOUSE_WHEELED:
-            mouse_wheel = mouse.Wheel(event.ButtonState >> 2**5 - 1 > 0)
+            mouse_wheel = MouseWheel(event.ButtonState >> 2**5 - 1 > 0)
         else:
             if   event.ButtonState & win32con.FROM_LEFT_1ST_BUTTON_PRESSED: mouse_button = MouseButton.LEFT
             elif event.ButtonState & win32con.RIGHTMOST_BUTTON_PRESSED:     mouse_button = MouseButton.RIGHT
@@ -56,7 +56,7 @@ if sys.platform == "win32":
                 mouse_button_released = True
             
             if mouse_button is not None:
-                mouse_click = mouse.Click(mouse_button, mouse_button_released)
+                mouse_click = MouseClick(mouse_button, mouse_button_released)
         
         return MouseInfo(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
     def parse_windows_key_event(event: MockPyINPUT_RECORDType) -> KeyInfo:
