@@ -10,7 +10,6 @@ else:
 import os
 import terminal
 from data_types import Coord
-from typing import Final
 from terminal import TerminalInfoProxy
 from input_properties import *
 
@@ -163,7 +162,7 @@ else:
                 return KeyInfo(offset_char, flags)
             elif 2**5 < int.from_bytes(char) < 2**7 and sequence:
                 return KeyInfo(char, KeyFlags.ALT | (KeyFlags.SHIFT if char.isupper() else 0))
-            elif int.from_bytes(char) >= 2**7 - 1: # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
+            elif int.from_bytes(char) > 2**7: # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
                 second_char = sys.stdin.buffer.read(1)
                 assert second_char is not None, "Caractère innatendu"
                 return KeyInfo(char + second_char, 0)
