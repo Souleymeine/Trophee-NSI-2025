@@ -89,6 +89,33 @@ if sys.platform == "win32":
                 mouse_click = mouse.Click(mouse_button, mouse_button_released)
         
         return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
+    def parse_windows_key_event(event: MockPyINPUT_RECORDType) -> KeyInfo:
+        flag: int = 0
+        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: flag |= KeyFlags.CTRL
+        if event.ControlKeyState & win32con.SHIFT_PRESSED:     flag |= KeyFlags.SHIFT
+        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  flag |= KeyFlags.ALT
+
+        char = event.Char.encode()
+        if flag & KeyFlags.CTRL:
+            char = (int.from_bytes(char) + 2**6 + 2**5).to_bytes()
+
+        return KeyInfo(char, flag)
+    def parse_windows_arrow_event(event: MockPyINPUT_RECORDType) -> ArrowInfo | None:
+        flag: int = 0
+        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: flag |= KeyFlags.CTRL
+        if event.ControlKeyState & win32con.SHIFT_PRESSED:     flag |= KeyFlags.SHIFT
+        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  flag |= KeyFlags.ALT
+
+        arrow = None
+        match event.VirtualKeyCode:
+            case 37: arrow = Arrows.LEFT
+            case 38: arrow = Arrows.UP
+            case 39: arrow = Arrows.RIGHT
+            case 40: arrow = Arrows.DOWN
+
+        if arrow is not None:
+            return ArrowInfo(arrow, flag)
+
 else:
     def parse_xterm_mouse_tracking_sequence(sequence: bytes, last_click: mouse.Click | None) -> mouse.Info:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
@@ -246,7 +273,9 @@ def listen_to_input(term_info: TerminalInfoProxy):
                     if current_char == b'\r': current_char = b'\n'
 
                     if current_char != b'\x00':
-                        on_key(current_char, term_info)
+                        current_key_info = parse_windows_key_event(conin_event)
+                    else:
+                        current_arrow_info = parse_windows_arrow_event(conin_event)
 
                 if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
                     # Certains évènement inutiles et non désirés sont envoyés par Windows. Parmis eux, 
