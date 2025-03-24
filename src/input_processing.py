@@ -60,18 +60,27 @@ if sys.platform == "win32":
         
         return MouseInfo(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
     def parse_windows_key_event(event: MockPyINPUT_RECORDType) -> KeyInfo:
-        flag: int = 0
-        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: flag |= KeyFlags.CTRL
-        if event.ControlKeyState & win32con.SHIFT_PRESSED:     flag |= KeyFlags.SHIFT
-        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  flag |= KeyFlags.ALT
-
         char = event.Char.encode()
-        if flag & KeyFlags.CTRL:
+
+        is_char_unmodifianle_key: bool = (char != b'\x1b' and char != b'\x7f' and char != b'\x08')
+
+        # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
+        if char == b'\r':
+            char = b'\n'
+
+        flag: int = 0
+        if is_char_unmodifianle_key:
+            if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: flag |= KeyFlags.CTRL
+            if event.ControlKeyState & win32con.SHIFT_PRESSED:     flag |= KeyFlags.SHIFT
+            if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  flag |= KeyFlags.ALT
+
+        if is_char_unmodifianle_key and flag & KeyFlags.CTRL:
             char = (int.from_bytes(char) + 2**6 + 2**5).to_bytes()
             if flag & KeyFlags.SHIFT:
                 char = char.upper()
 
         return KeyInfo(char, flag)
+
     def parse_windows_arrow_event(event: MockPyINPUT_RECORDType) -> ArrowInfo | None:
         flag: int = 0
         if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: flag |= KeyFlags.CTRL
@@ -237,22 +246,16 @@ def listen_to_input(term_info: TerminalInfoProxy):
             # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
             
             if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
-                current_char = str.encode(conin_event.Char)
-                # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
-                if current_char == b'\r': current_char = b'\n'
-
-                if current_char != b'\x00':
-                    current_key_info = parse_windows_key_event(conin_event)
-                else:
+                if str.encode(conin_event.Char) == b'\x00':
                     current_arrow_info = parse_windows_arrow_event(conin_event)
+                else:
+                    current_key_info = parse_windows_key_event(conin_event)
 
             if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
-                # Certains évènement inutiles et non désirés sont envoyés par Windows. Parmis eux, 
-                # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir relacher un click
-                # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir déplacer la souris à l'intérieur même d'une cellule
-                # Les deux booléens moved_on_cell et clicked_on_cell ci dessous, une fois exclus mutuellement (avec l'opérateur '^' ou XOR) retourne True 
-                # uniquement lorsqu'un changement d'état non inutile a été détecté.
-                # C'était un bien long paragraphe pour parler de filtres.
+                # Deux évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) inutiles et non désirés sont envoyés par Windows :
+                # - après avoir relacher un click
+                # - après avoir déplacer la souris à l'intérieur même d'une cellule
+                # Les deux booléens moved_on_cell et clicked_on_cell ci dessous exlus ces cas là
 
                 current_mouse_coord = Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
                 mouse_button_pressed: bool = conin_event.ButtonState != 0
@@ -261,6 +264,7 @@ def listen_to_input(term_info: TerminalInfoProxy):
                 moved_on_cell: bool = moved_for_the_first_time or (previous_mouse_info is not None and previous_mouse_info.coord != current_mouse_coord)
                 clicked_on_cell: bool = (mouse_button_pressed or (last_click is not None and last_click.released == False)) and bool(conin_event.EventFlags & win32con.MOUSE_MOVED) == False
                 
+                # L'opérateur ^ est un "OU exclusif" (XOR)
                 if moved_on_cell ^ clicked_on_cell:
                     current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
         else:
