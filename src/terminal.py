@@ -194,9 +194,9 @@ def reset(term_info: TerminalInfoProxy):
     unset_altbuf()
     show_cursor()
     term_info.mouse_mode = False
-    termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, term_info.tty_default_mode) # type: ignore
     if sys.platform == "win32":
         term_info.set_conin_mode(term_info.conin_default_mode)
     else:
+        termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, term_info.tty_default_mode) # type: ignore
         set_posix_echo(True)
 
