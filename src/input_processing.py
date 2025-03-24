@@ -16,15 +16,15 @@ from input_properties import *
 
 
 def on_mouse(info: MouseInfo):
-    print(info)
+    print(info, end="\n\r")
 def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
     if term_info.mouse_mode == False and info.char == b'\x1b':
         term_info.mouse_mode = True
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
-    print(info)
+    print(info, end="\n\r")
 
 def on_arrow(info: ArrowInfo):
-    print(info)
+    print(info, end="\n\r")
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: MouseClick | None) -> MouseInfo:
@@ -148,7 +148,7 @@ else:
 
     def parse_xterm_key(char: bytes, sequence: bool) -> KeyInfo | None:
         if char != b'\t' and char != b'\x1b' and char != b'\x08' and char != b'\x7f':
-            if int.from_bytes(char) < 26: # Caractères spéciaux précédents les caractères normaux, dans ce contexte : CTRL + A-Z
+            if int.from_bytes(char) <= 26: # Caractères spéciaux précédents les caractères normaux, dans ce contexte : CTRL + A-Z
                 offset_char = (int.from_bytes(char) + 2**6 + 2**5).to_bytes()
                 flags = KeyFlags.CTRL | (KeyFlags.ALT if sequence else 0) | (KeyFlags.SHIFT if offset_char.isupper() else 0)
                 return KeyInfo(offset_char, flags)
@@ -229,79 +229,73 @@ def listen_to_input(term_info: TerminalInfoProxy):
     current_arrow_info: ArrowInfo | None = None
     current_key_info: KeyInfo | None = None
 
-    try:
-        while True:
-            if sys.platform == "win32":
-                # On utilise une version simplifiée de PyINPUT_RECORDType facilement communicable entre processus, les champs restent les mêmes
-                conin_event = term_info.read_conin()
+    if sys.platform == "win32":
+        # On utilise une version simplifiée de PyINPUT_RECORDType facilement communicable entre processus, les champs restent les mêmes
+        conin_event = term_info.read_conin()
 
-                # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
-                
-                if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
-                    current_char = str.encode(conin_event.Char)
-                    # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
-                    if current_char == b'\r': current_char = b'\n'
+        # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
+        
+        if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
+            current_char = str.encode(conin_event.Char)
+            # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
+            if current_char == b'\r': current_char = b'\n'
 
-                    if current_char != b'\x00':
-                        current_key_info = parse_windows_key_event(conin_event)
-                    else:
-                        current_arrow_info = parse_windows_arrow_event(conin_event)
-
-                if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
-                    # Certains évènement inutiles et non désirés sont envoyés par Windows. Parmis eux, 
-                    # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir relacher un click
-                    # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir déplacer la souris à l'intérieur même d'une cellule
-                    # Les deux booléens moved_on_cell et clicked_on_cell ci dessous, une fois exclus mutuellement (avec l'opérateur '^' ou XOR) retourne True 
-                    # uniquement lorsqu'un changement d'état non inutile a été détecté.
-                    # C'était un bien long paragraphe pour parler de filtres.
-
-                    current_mouse_coord = Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
-                    mouse_button_pressed: bool = conin_event.ButtonState != 0
-                    moved_for_the_first_time: bool = (previous_mouse_info is None and bool(conin_event.EventFlags & win32con.MOUSE_MOVED))
-
-                    moved_on_cell: bool = moved_for_the_first_time or (previous_mouse_info is not None and previous_mouse_info.coord != current_mouse_coord)
-                    clicked_on_cell: bool = (mouse_button_pressed or (last_click is not None and last_click.released == False)) and bool(conin_event.EventFlags & win32con.MOUSE_MOVED) == False
-                    
-                    if moved_on_cell ^ clicked_on_cell:
-                        current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
+            if current_char != b'\x00':
+                current_key_info = parse_windows_key_event(conin_event)
             else:
-                current_char = terminal.unix_getch()
+                current_arrow_info = parse_windows_arrow_event(conin_event)
 
-                if current_char == b'\x1b':
-                    with Nonblocking(sys.stdin):
-                        read = sys.stdin.buffer.read(SEQUENCE_LENGTH)
-                        if read != None:
-                            read = bytes(read)
-                            if is_mouse_sequence(read):
-                                current_mouse_info = parse_xterm_mouse_tracking_sequence(read[1:], last_click)
-                            elif is_arrow_sequence(read):
-                                current_arrow_info = parse_xterm_arrow_sequence(read[1:])
-                            elif len(read) == 1:
-                                current_key_info = parse_xterm_key(read, True)
-                        else:
-                            current_key_info = parse_xterm_key(b'\x1b', False)
-                elif current_char != b'\x00':
-                    # Convertie b'\x08' en b'\x7f' et b'\x7f' en b'\x08'
-                    current_char = b'\x08' if current_char == b'\x7f' else b'\x7f' if current_char == b'\x08' else current_char
-                    current_key_info = parse_xterm_key(current_char, False)
+        if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
+            # Certains évènement inutiles et non désirés sont envoyés par Windows. Parmis eux, 
+            # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir relacher un click
+            # - un évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) après avoir déplacer la souris à l'intérieur même d'une cellule
+            # Les deux booléens moved_on_cell et clicked_on_cell ci dessous, une fois exclus mutuellement (avec l'opérateur '^' ou XOR) retourne True 
+            # uniquement lorsqu'un changement d'état non inutile a été détecté.
+            # C'était un bien long paragraphe pour parler de filtres.
 
-            if current_mouse_info is not None:
-                previous_mouse_info = current_mouse_info
-                if current_mouse_info.click is not None:
-                    last_click = current_mouse_info.click
+            current_mouse_coord = Coord(conin_event.MousePosition.X + 1, conin_event.MousePosition.Y + 1)
+            mouse_button_pressed: bool = conin_event.ButtonState != 0
+            moved_for_the_first_time: bool = (previous_mouse_info is None and bool(conin_event.EventFlags & win32con.MOUSE_MOVED))
 
-                on_mouse(current_mouse_info)
-                current_mouse_info = None
+            moved_on_cell: bool = moved_for_the_first_time or (previous_mouse_info is not None and previous_mouse_info.coord != current_mouse_coord)
+            clicked_on_cell: bool = (mouse_button_pressed or (last_click is not None and last_click.released == False)) and bool(conin_event.EventFlags & win32con.MOUSE_MOVED) == False
+            
+            if moved_on_cell ^ clicked_on_cell:
+                current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
+    else:
+        current_char = terminal.unix_getch()
 
-            elif current_arrow_info is not None:
-                on_arrow(current_arrow_info)
-                current_arrow_info = None
+        if current_char == b'\x1b':
+            with Nonblocking(sys.stdin):
+                read = sys.stdin.buffer.read(SEQUENCE_LENGTH)
+                if read != None:
+                    read = bytes(read)
+                    if is_mouse_sequence(read):
+                        current_mouse_info = parse_xterm_mouse_tracking_sequence(read[1:], last_click)
+                    elif is_arrow_sequence(read):
+                        current_arrow_info = parse_xterm_arrow_sequence(read[1:])
+                    elif len(read) == 1:
+                        current_key_info = parse_xterm_key(read, True)
+                else:
+                    current_key_info = parse_xterm_key(b'\x1b', False)
+        elif current_char != b'\x00':
+            # Convertie b'\x08' en b'\x7f' et b'\x7f' en b'\x08'
+            current_char = b'\x08' if current_char == b'\x7f' else b'\x7f' if current_char == b'\x08' else current_char
+            current_key_info = parse_xterm_key(current_char, False)
 
-            elif current_key_info is not None:
-                on_key(current_key_info, term_info)
-                current_key_info = None
+    if current_mouse_info is not None:
+        previous_mouse_info = current_mouse_info
+        if current_mouse_info.click is not None:
+            last_click = current_mouse_info.click
 
-    except KeyboardInterrupt:
-        # Géré dans main.py
-        pass
+        on_mouse(current_mouse_info)
+        current_mouse_info = None
+
+    elif current_arrow_info is not None:
+        on_arrow(current_arrow_info)
+        current_arrow_info = None
+
+    elif current_key_info is not None:
+        on_key(current_key_info, term_info)
+        current_key_info = None
 

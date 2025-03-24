@@ -11,6 +11,7 @@ if sys.platform == "win32":
     from win32console import PyConsoleScreenBufferType
 else:
     import termios
+    import tty
 from data_types import EnsureSingle
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
 from multiprocessing.managers import BaseManager, BaseProxy
@@ -79,6 +80,8 @@ class Info(metaclass=EnsureSingle):
             self._conin_default_mode = self._conin.GetConsoleMode()
             self._conin_text_mode = (self._conin_default_mode & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS
             self._conin_mouse_mode = win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS 
+        else:
+            self._default_tty_mode = termios.tcgetattr(0)
 
     def get_mouse_mode(self) -> bool:
         return self._mouse_mode
@@ -131,6 +134,9 @@ class Info(metaclass=EnsureSingle):
         def set_conin_mode(self, mode: int):
             assert self._conin is not None
             self._conin.SetConsoleMode(mode)
+    else:
+        def  get_tty_default_mode(self):
+            return self._default_tty_mode
 
 # Voir https://docs.python.org/3/library/multiprocessing.html#customized-managers
 class TerminalInfoProxy(BaseProxy):
@@ -160,6 +166,10 @@ class TerminalInfoProxy(BaseProxy):
 
         def read_conin(self) -> MockPyINPUT_RECORDType:
             return cast(MockPyINPUT_RECORDType, self._callmethod('read_conin'))
+    else:
+        @property
+        def tty_default_mode(self):
+            return self._callmethod('get_tty_default_mode')
 
 class TerminalInfoManager(BaseManager):
     pass
@@ -168,6 +178,7 @@ def init(term_info: TerminalInfoProxy):
     """Prépare l'écran secondaire du terminal."""
     if sys.platform != "win32":
         set_posix_echo(False)
+        tty.setraw(sys.stdin.fileno())
 
     # NOTE : l'ordre de ces fonctions n'est pas anodin. 
     # Cacher le curseur après avoir activé l'écran alternatif le réaffichera.
@@ -183,6 +194,7 @@ def reset(term_info: TerminalInfoProxy):
     unset_altbuf()
     show_cursor()
     term_info.mouse_mode = False
+    termios.tcsetattr(sys.stdin.fileno(), termios.TCSADRAIN, term_info.tty_default_mode) # type: ignore
     if sys.platform == "win32":
         term_info.set_conin_mode(term_info.conin_default_mode)
     else:
