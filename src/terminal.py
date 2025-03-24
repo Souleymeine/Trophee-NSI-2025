@@ -78,8 +78,8 @@ class Info(metaclass=EnsureSingle):
             self._conin.SetStdHandle(win32console.STD_INPUT_HANDLE)
             
             self._conin_default_mode = self._conin.GetConsoleMode()
-            self._conin_text_mode = (self._conin_default_mode & ~ENABLE_QUICK_EDIT_MODE) | ENABLE_EXTENDED_FLAGS
-            self._conin_mouse_mode = win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS 
+            self._conin_text_mode = (self._conin_default_mode & ~ENABLE_QUICK_EDIT_MODE & ~win32console.ENABLE_PROCESSED_INPUT) | ENABLE_EXTENDED_FLAGS
+            self._conin_mouse_mode = (win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS) & ~win32console.ENABLE_PROCESSED_INPUT
         else:
             self._default_tty_mode = termios.tcgetattr(0)
 
