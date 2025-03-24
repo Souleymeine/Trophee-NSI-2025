@@ -3,8 +3,6 @@
 # Projet : pyscape
 # Auteurs : Rabta Souleymeine
 
-import multiprocessing
-import signal
 import sys
 import os
 import asyncio
@@ -45,12 +43,5 @@ if __name__ == "__main__":
 
     input_process = Process(target=input_processing.listen_to_input, args=(shared_terminal_state,), name="InputProcess", daemon=True)
 
-    if sys.platform == "win32":
-        try:
-            asyncio.run(main())
-        except KeyboardInterrupt:
-            clean_exit()
-    else:
-        signal.signal(signal.SIGINT, sigint_handler)  # Capture CTRL+C
-        asyncio.run(main())
+    asyncio.run(main())
 
