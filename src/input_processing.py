@@ -221,7 +221,6 @@ def listen_to_input(term_info: TerminalInfoProxy):
         SEQUENCE_LENGTH: Final[int] = 5
 
     # Ces valeurs seront changées à partir de la première intéraction
-    current_char: bytes = b''
     previous_mouse_info: MouseInfo | None = None
     current_mouse_info: MouseInfo | None = None
     last_click: MouseClick | None = None
