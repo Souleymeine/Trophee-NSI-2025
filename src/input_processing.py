@@ -1,8 +1,6 @@
 # Projet : pyscape
 # Auteurs : Rabta Souleymeine
 
-from dataclasses import dataclass
-from enum import Enum, IntFlag
 import sys
 if sys.platform == "win32":
     import win32console, win32con
@@ -10,42 +8,14 @@ if sys.platform == "win32":
 else:
     import fcntl
 import os
-import mouse
 import terminal
 from data_types import Coord
 from typing import Final
 from terminal import TerminalInfoProxy
+from input_properties import *
 
-class XtermMouseFlags(IntFlag):
-    SHIFT = 4
-    ALT = 8
-    CTRL = 16
-    MOVE = 32 
-class XtermKeyFlags(IntFlag):
-    SHIFT = 1
-    ALT = 2
-    CTRL = 4
-class KeyFlags(IntFlag):
-    CTRL = 1
-    SHIFT = 2
-    ALT = 4
 
-class Arrows(Enum):
-    UP = 0
-    DOWN = 1
-    RIGHT = 2
-    LEFT = 3
-
-@dataclass
-class ArrowInfo:
-    arrow: Arrows
-    key_flag: int
-@dataclass
-class KeyInfo:
-    char: bytes
-    key_flag: int
-
-def on_mouse(info: mouse.Info):
+def on_mouse(info: MouseInfo):
     print(info)
 def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
     if term_info.mouse_mode == False and info.char == b'\x1b':
@@ -57,8 +27,8 @@ def on_arrow(info: ArrowInfo):
     print(info)
 
 if sys.platform == "win32":
-    def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
-        """Analyse l'évènement renvoyé par le terminal et le formatte en un objet de type 'mouse.Info'"""
+    def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: MouseClick | None) -> MouseInfo:
+        """Analyse l'évènement renvoyé par le terminal et le formatte en un objet de type 'MouseInfo'"""
         
         # Le code se réfère à ce format: https://learn.microsoft.com/fr-fr/windows/console/mouse-event-record-str
 
@@ -69,17 +39,17 @@ if sys.platform == "win32":
         mouse_wheel = None
         mouse_flags = 0
 
-        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: mouse_flags += mouse.MouseKeyFlags.CTRL
-        if event.ControlKeyState & win32con.SHIFT_PRESSED:     mouse_flags += mouse.MouseKeyFlags.SHIFT
-        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  mouse_flags += mouse.MouseKeyFlags.ALT
-        if event.EventFlags & win32con.MOUSE_MOVED:            mouse_flags += mouse.MouseKeyFlags.MOVE
+        if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: mouse_flags += MouseKeyFlags.CTRL
+        if event.ControlKeyState & win32con.SHIFT_PRESSED:     mouse_flags += MouseKeyFlags.SHIFT
+        if event.ControlKeyState & win32con.LEFT_ALT_PRESSED:  mouse_flags += MouseKeyFlags.ALT
+        if event.EventFlags & win32con.MOUSE_MOVED:            mouse_flags += MouseKeyFlags.MOVE
 
         if event.EventFlags & win32con.MOUSE_WHEELED:
             mouse_wheel = mouse.Wheel(event.ButtonState >> 2**5 - 1 > 0)
         else:
-            if   event.ButtonState & win32con.FROM_LEFT_1ST_BUTTON_PRESSED: mouse_button = mouse.Button.LEFT
-            elif event.ButtonState & win32con.RIGHTMOST_BUTTON_PRESSED:     mouse_button = mouse.Button.RIGHT
-            elif event.ButtonState & win32con.FROM_LEFT_2ND_BUTTON_PRESSED: mouse_button = mouse.Button.MIDDLE
+            if   event.ButtonState & win32con.FROM_LEFT_1ST_BUTTON_PRESSED: mouse_button = MouseButton.LEFT
+            elif event.ButtonState & win32con.RIGHTMOST_BUTTON_PRESSED:     mouse_button = MouseButton.RIGHT
+            elif event.ButtonState & win32con.FROM_LEFT_2ND_BUTTON_PRESSED: mouse_button = MouseButton.MIDDLE
             elif event.ButtonState == 0 and (last_click is not None and last_click.released == False): # Aucun click enfoncé
                 # On cherche le dernier click enfoncé pour trouvé le bouton correspondant
                 mouse_button = last_click.button
@@ -88,7 +58,7 @@ if sys.platform == "win32":
             if mouse_button is not None:
                 mouse_click = mouse.Click(mouse_button, mouse_button_released)
         
-        return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
+        return MouseInfo(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
     def parse_windows_key_event(event: MockPyINPUT_RECORDType) -> KeyInfo:
         flag: int = 0
         if event.ControlKeyState & win32con.LEFT_CTRL_PRESSED: flag |= KeyFlags.CTRL
@@ -117,7 +87,7 @@ if sys.platform == "win32":
             return ArrowInfo(arrow, flag)
 
 else:
-    def parse_xterm_mouse_tracking_sequence(sequence: bytes, last_click: mouse.Click | None) -> mouse.Info:
+    def parse_xterm_mouse_tracking_sequence(sequence: bytes, last_click: MouseClick | None) -> MouseInfo:
         """Analyse la séquence de caractère pour l'interpréter en une classe de type mouse.Info"""
 
         # Convertie les caractères en valeures numériques
@@ -138,15 +108,15 @@ else:
                 xterm_mouse_key_flags += flag
                 # Ajoute le drapeau au nom correspondant entre _XtermMouseFlags et mouse.MouseKeyFlags
                 if flag.name != None:
-                    mouse_flags += mouse.MouseKeyFlags[flag.name].value
+                    mouse_flags += MouseKeyFlags[flag.name].value
 
         button_flag = data[0] - xterm_mouse_key_flags
         match button_flag:
-            case 64: mouse_wheel = mouse.Wheel.SCROLL_UP
-            case 65: mouse_wheel = mouse.Wheel.SCROLL_DOWN
-            case 0: mouse_button = mouse.Button.LEFT
-            case 1: mouse_button = mouse.Button.MIDDLE
-            case 2: mouse_button = mouse.Button.RIGHT
+            case 64: mouse_wheel = MouseWheel.SCROLL_UP
+            case 65: mouse_wheel = MouseWheel.SCROLL_DOWN
+            case 0: mouse_button = MouseButton.LEFT
+            case 1: mouse_button = MouseButton.MIDDLE
+            case 2: mouse_button = MouseButton.RIGHT
             case 3: # Aucun click enfoncé
                 mouse_button_released = True
                 # On cherche le dernier click enfoncé pour trouvé le bouton correspondant
@@ -154,9 +124,9 @@ else:
                     mouse_button = last_click.button
 
         if mouse_button != None:
-            mouse_click = mouse.Click(mouse_button, mouse_button_released)
+            mouse_click = MouseClick(mouse_button, mouse_button_released)
 
-        return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
+        return MouseInfo(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
     def parse_xterm_arrow_sequence(sequence: bytes) -> ArrowInfo | None:
         arrow: Arrows | None = None
         match sequence[-1].to_bytes():
@@ -252,9 +222,9 @@ def listen_to_input(term_info: TerminalInfoProxy):
 
     # Ces valeurs seront changées à partir de la première intéraction
     current_char: bytes = b''
-    previous_mouse_info: mouse.Info | None = None
-    current_mouse_info: mouse.Info | None = None
-    last_click: mouse.Click | None = None
+    previous_mouse_info: MouseInfo | None = None
+    current_mouse_info: MouseInfo | None = None
+    last_click: MouseClick | None = None
 
     current_arrow_info: ArrowInfo | None = None
     current_key_info: KeyInfo | None = None
