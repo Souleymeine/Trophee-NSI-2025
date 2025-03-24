@@ -1,7 +1,8 @@
 # Projet : pyscape
 # Auteurs : Rabta Souleymeine
 
-from enum import IntFlag
+from dataclasses import dataclass
+from enum import Enum, IntFlag
 import sys
 if sys.platform == "win32":
     import win32console, win32con
@@ -15,13 +16,45 @@ from data_types import Coord
 from typing import Final
 from terminal import TerminalInfoProxy
 
+class XtermMouseFlags(IntFlag):
+    SHIFT = 4
+    ALT = 8
+    CTRL = 16
+    MOVE = 32 
+class XtermKeyFlags(IntFlag):
+    SHIFT = 1
+    ALT = 2
+    CTRL = 4
+class KeyFlags(IntFlag):
+    CTRL = 1
+    SHIFT = 2
+    ALT = 4
+
+class Arrows(Enum):
+    UP = 0
+    DOWN = 1
+    RIGHT = 2
+    LEFT = 3
+
+@dataclass
+class ArrowInfo:
+    arrow: Arrows
+    key_flag: int
+@dataclass
+class KeyInfo:
+    char: bytes
+    key_flag: int
+
 def on_mouse(info: mouse.Info):
     print(info)
-
-def on_key(char: bytes, term_info: TerminalInfoProxy):
-    if term_info.mouse_mode == False and char == b'\x1b':
+def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
+    if term_info.mouse_mode == False and info.char == b'\x1b':
         term_info.mouse_mode = True
-    print(f"decoded: \"{char.decode('utf-8')}\", raw: {char}")
+    # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
+    print(info)
+
+def on_arrow(info: ArrowInfo):
+    print(info)
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: mouse.Click | None) -> mouse.Info:
@@ -65,12 +98,6 @@ else:
 
         # Le code se réfère à ce format : https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
 
-        class _XtermMouseFlags(IntFlag):
-            SHIFT = 4
-            ALT = 8
-            CTRL = 16
-            MOVE = 32
-
         mouse_coord = Coord(data[-2], data[-1])
         mouse_click = None
         mouse_button = None
@@ -79,7 +106,7 @@ else:
         mouse_flags = 0
 
         xterm_mouse_key_flags = 0
-        for flag in _XtermMouseFlags:
+        for flag in XtermMouseFlags:
             if data[0] & flag:
                 xterm_mouse_key_flags += flag
                 # Ajoute le drapeau au nom correspondant entre _XtermMouseFlags et mouse.MouseKeyFlags
@@ -103,7 +130,74 @@ else:
             mouse_click = mouse.Click(mouse_button, mouse_button_released)
 
         return mouse.Info(mouse_click, mouse_wheel, mouse_coord, mouse_flags)
+    def parse_xterm_arrow_sequence(sequence: bytes) -> ArrowInfo | None:
+        arrow: Arrows | None = None
+        match sequence[-1].to_bytes():
+            case b'A': arrow = Arrows.UP
+            case b'B': arrow = Arrows.DOWN
+            case b'C': arrow = Arrows.RIGHT
+            case b'D': arrow = Arrows.LEFT
+        if arrow is None:
+            return None # Séquence non reconnue.
 
+        arrow_flags: int = 0
+        if sequence[0].to_bytes() == b'1':
+            for flag in XtermKeyFlags:
+                if sequence[2] - sequence[0] & flag and flag.name is not None:
+                    arrow_flags |= KeyFlags[flag.name].value
+
+        return ArrowInfo(arrow, arrow_flags)
+
+    def parse_xterm_key(char: bytes, sequence: bool) -> KeyInfo | None:
+        if char != b'\t' and char != b'\x1b' and char != b'\x08' and char != b'\x7f':
+            if int.from_bytes(char) < 26: # Caractères spéciaux précédents les caractères normaux, dans ce contexte : CTRL + A-Z
+                offset_char = (int.from_bytes(char) + 2**6 + 2**5).to_bytes()
+                flags = KeyFlags.CTRL | (KeyFlags.ALT if sequence else 0) | (KeyFlags.SHIFT if offset_char.isupper() else 0)
+                return KeyInfo(offset_char, flags)
+            elif 2**5 < int.from_bytes(char) < 2**7 and sequence:
+                return KeyInfo(char, KeyFlags.ALT | (KeyFlags.SHIFT if char.isupper() else 0))
+            elif int.from_bytes(char) >= 2**7 - 1: # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
+                second_char = sys.stdin.buffer.read(1)
+                assert second_char is not None, "Caractère innatendu"
+                return KeyInfo(char + second_char, 0)
+
+        return KeyInfo(char, KeyFlags.SHIFT if char.isupper() else 0)
+    
+    def is_mouse_sequence(sequence: bytes) -> bool:
+        SEQUENCE_LENGTH: Final[int] = 5
+
+        if len(sequence) != SEQUENCE_LENGTH:
+            return False
+        valid_mouse_CSI: bool = (sequence[0:2] == b'[M')
+        valid_coord: bool = (sequence[3] - 2**5 >= 1 and sequence[4] - 2**5 >= 1)
+        valid_flags: bool = False
+
+        flags: int = 0
+        for flag in XtermMouseFlags:
+            if sequence[2] - 2**5 & flag:
+                flags |= flag
+
+        for button_value in (0, 1, 2, 3, 64, 65):
+            if sequence[2] - 2**5 - flags == button_value:
+                valid_flags = True
+
+        return valid_mouse_CSI and valid_flags and valid_coord
+    def is_arrow_sequence(sequence: bytes) -> bool:
+        if len(sequence) == 5:
+            valid_CSI: bool = (sequence[0:3] == b'[1;')
+            if not valid_CSI:
+                return False
+            valid_flag: bool = False
+            for flag in XtermKeyFlags:
+                if int((sequence[3] - 1).to_bytes()) & flag:
+                    valid_flag = True
+                    break
+            return valid_CSI and valid_flag
+        elif len(sequence) == 2:
+            for arrow_code in b'ABCD':
+                if sequence[1] == arrow_code:
+                    return True
+        return False
     # Après plusieurs jours de recherche, je suis tombé sur ce gestionnaire de contexte depuis le code source
     # du projet bpytop qui faisait exactement le comportement attendu sans processus ou timeout.
     # Pure magie pour l'instant. TODO : à démystifier
@@ -130,10 +224,13 @@ def listen_to_input(term_info: TerminalInfoProxy):
         SEQUENCE_LENGTH: Final[int] = 5
 
     # Ces valeurs seront changées à partir de la première intéraction
-    last_char: bytes = b''
+    current_char: bytes = b''
     previous_mouse_info: mouse.Info | None = None
     current_mouse_info: mouse.Info | None = None
     last_click: mouse.Click | None = None
+
+    current_arrow_info: ArrowInfo | None = None
+    current_key_info: KeyInfo | None = None
 
     try:
         while True:
@@ -144,12 +241,12 @@ def listen_to_input(term_info: TerminalInfoProxy):
                 # MERCI : https://stackoverflow.com/questions/76154843/windows-python-detect-mouse-events-in-terminal
                 
                 if conin_event.EventType == win32console.KEY_EVENT and conin_event.KeyDown:
-                    last_char = str.encode(conin_event.Char)
+                    current_char = str.encode(conin_event.Char)
                     # \r est reçu à la place \n (sauf si CTRL + entrer), on rend les deux identiques
-                    if last_char == b'\r': last_char = b'\n'
+                    if current_char == b'\r': current_char = b'\n'
 
-                    if last_char != b'\x00':
-                        on_key(last_char, term_info)
+                    if current_char != b'\x00':
+                        on_key(current_char, term_info)
 
                 if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
                     # Certains évènement inutiles et non désirés sont envoyés par Windows. Parmis eux, 
@@ -169,39 +266,41 @@ def listen_to_input(term_info: TerminalInfoProxy):
                     if moved_on_cell ^ clicked_on_cell:
                         current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
             else:
-                last_char = terminal.unix_getch()
+                current_char = terminal.unix_getch()
 
-                if last_char == b'\x1b':
+                if current_char == b'\x1b':
                     with Nonblocking(sys.stdin):
                         read = sys.stdin.buffer.read(SEQUENCE_LENGTH)
                         if read != None:
                             read = bytes(read)
-                            if len(read) == SEQUENCE_LENGTH and read[1] == ord('M'): # La séquence se démarque par un M majuscule
+                            if is_mouse_sequence(read):
                                 current_mouse_info = parse_xterm_mouse_tracking_sequence(read[1:], last_click)
-                            else:
-                                # TODO: Gérer les autres séquences comme les flèches
-                                pass
+                            elif is_arrow_sequence(read):
+                                current_arrow_info = parse_xterm_arrow_sequence(read[1:])
+                            elif len(read) == 1:
+                                current_key_info = parse_xterm_key(read, True)
                         else:
-                            on_key(b'\x1b', term_info)
-                elif last_char != b'\x00':
+                            current_key_info = parse_xterm_key(b'\x1b', False)
+                elif current_char != b'\x00':
                     # Convertie b'\x08' en b'\x7f' et b'\x7f' en b'\x08'
-                    last_char = b'\x08' if last_char == b'\x7f' else b'\x7f' if last_char == b'\x08' else last_char
+                    current_char = b'\x08' if current_char == b'\x7f' else b'\x7f' if current_char == b'\x08' else current_char
+                    current_key_info = parse_xterm_key(current_char, False)
 
-                    if int.from_bytes(last_char) >= (2**7): # Pour les caractères au delà de 127 (utf-8, ex : 'ù')
-                        second_char = sys.stdin.buffer.read(1)
-                        assert second_char != None, "Caractère innatendu"
-                        on_key(last_char + second_char, term_info)
-                    else:
-                        on_key(last_char, term_info)
-
-            if term_info.mouse_mode == True and current_mouse_info != None:
+            if current_mouse_info is not None:
                 previous_mouse_info = current_mouse_info
-                if current_mouse_info.click != None:
+                if current_mouse_info.click is not None:
                     last_click = current_mouse_info.click
 
                 on_mouse(current_mouse_info)
-                # Une fois la variable "current_mouse_info" utilisée, on la remet à None pour indiquer qu'aucun évènement n'est arrivé après celui-là.
                 current_mouse_info = None
+
+            elif current_arrow_info is not None:
+                on_arrow(current_arrow_info)
+                current_arrow_info = None
+
+            elif current_key_info is not None:
+                on_key(current_key_info, term_info)
+                current_key_info = None
 
     except KeyboardInterrupt:
         # Géré dans main.py
