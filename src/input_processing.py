@@ -4,13 +4,14 @@
 import sys
 if sys.platform == "win32":
     import win32console, win32con
+    import scale_win_console
     from terminal import MockPyINPUT_RECORDType
 else:
     import fcntl
 import os
 import terminal
 from data_types import Coord
-from terminal import TerminalInfoProxy, scale_win_console
+from terminal import TerminalInfoProxy
 from input_properties import *
 
 def on_mouse(info: MouseInfo):
@@ -21,12 +22,13 @@ def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
         sys.exit(0)
 
     # TODO : zoomer DANS la console sans l'agrandir
-    if (info.char == b'=' or info.char == b'+') and info.key_flag & KeyFlags.ALT:
-        scale_win_console(1)
-        on_resize()
-    if info.char == b'-' and info.key_flag & KeyFlags.ALT:
-        scale_win_console(-1)
-        on_resize()
+    if sys.platform == "win32":
+        if (info.char == b'=' or info.char == b'+') and info.key_flag & KeyFlags.ALT:
+            scale_win_console(1)
+            on_resize()
+        if info.char == b'-' and info.key_flag & KeyFlags.ALT:
+            scale_win_console(-1)
+            on_resize()
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
     print(info, end="\n\r")
 
