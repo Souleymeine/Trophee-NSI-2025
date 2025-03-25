@@ -10,7 +10,7 @@ else:
 import os
 import terminal
 from data_types import Coord
-from terminal import TerminalInfoProxy
+from terminal import TerminalInfoProxy, scale_win_console
 from input_properties import *
 
 def on_mouse(info: MouseInfo):
@@ -19,11 +19,20 @@ def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
     if info.char == b'\x1b':
         terminal.reset(term_info)
         sys.exit(0)
+
+    if (info.char == b'=' or info.char == b'+') and info.key_flag & KeyFlags.ALT:
+        scale_win_console(1)
+        on_resize()
+    if info.char == b'-' and info.key_flag & KeyFlags.ALT:
+        scale_win_console(-1)
+        on_resize()
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
     print(info, end="\n\r")
 
 def on_arrow(info: ArrowInfo):
     print(info, end="\n\r")
+def on_resize():
+    print(os.get_terminal_size())
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: MouseClick | None) -> MouseInfo:
@@ -243,8 +252,7 @@ def listen_to_input(term_info: TerminalInfoProxy):
                     current_arrow_info = parse_windows_arrow_event(conin_event)
                 else:
                     current_key_info = parse_windows_key_event(conin_event)
-
-            if term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
+            elif term_info.mouse_mode == True and conin_event.EventType == win32console.MOUSE_EVENT:
                 # Deux évènement avec le drapeau "MOUSE_MOVED" (win32con.MOUSE_MOVED) inutiles et non désirés sont envoyés par Windows :
                 # - après avoir relacher un click
                 # - après avoir déplacer la souris à l'intérieur même d'une cellule
@@ -260,6 +268,8 @@ def listen_to_input(term_info: TerminalInfoProxy):
                 # L'opérateur ^ est un "OU exclusif" (XOR)
                 if moved_on_cell ^ clicked_on_cell:
                     current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
+            elif conin_event.EventType == win32console.WINDOW_BUFFER_SIZE_EVENT:
+                on_resize()
         else:
             current_char = terminal.unix_getch()
 

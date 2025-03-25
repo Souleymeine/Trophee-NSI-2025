@@ -3,11 +3,16 @@
 
 # Ce fichier contient des fonctions et classes utilitaires liées au terminal
 
+import ctypes
+from os import get_terminal_size
 import sys
 from typing import cast
 if sys.platform == "win32":
+    from win32console import PyCOORDType
     import win32file
     import win32console
+    import ctypes as cts
+    import ctypes.wintypes as wts
     from win32console import PyConsoleScreenBufferType
 else:
     import termios
@@ -33,6 +38,63 @@ if sys.platform == "win32":
             self.ButtonState = ButtonState
             self.EventFlags = EventFlags
             self.MousePosition = MousePosition
+
+    LF_FACESIZE = 32
+    STD_OUTPUT_HANDLE = -11
+
+    class CONSOLE_FONT_INFOEX(cts.Structure):
+        _fields_ = (
+            ("cbSize", wts.ULONG),
+            ("nFont", wts.DWORD),
+            ("dwFontSize", wts._COORD),
+            ("FontFamily", wts.UINT),
+            ("FontWeight", wts.UINT),
+            ("FaceName", wts.WCHAR * LF_FACESIZE)
+        )
+
+
+    def scale_win_console(zoom: int):
+        # De https://stackoverflow.com/questions/52336257/python-programmatically-change-console-font-size
+
+        # Définie les fonctions de Kernel32.dll
+        kernel32 = cts.WinDLL("Kernel32.dll")
+
+        GetLastError = kernel32.GetLastError
+        GetLastError.argtypes = ()
+        GetLastError.restype = wts.DWORD
+
+        GetStdHandle = kernel32.GetStdHandle
+        GetStdHandle.argtypes = (wts.DWORD,)
+        GetStdHandle.restype = wts.HANDLE
+
+        GetCurrentConsoleFontEx = kernel32.GetCurrentConsoleFontEx
+        GetCurrentConsoleFontEx.argtypes = (wts.HANDLE, wts.BOOL, cts.POINTER(CONSOLE_FONT_INFOEX))
+        GetCurrentConsoleFontEx.restype = wts.BOOL
+
+        SetCurrentConsoleFontEx = kernel32.SetCurrentConsoleFontEx
+        SetCurrentConsoleFontEx.argtypes = (wts.HANDLE, wts.BOOL, cts.POINTER(CONSOLE_FONT_INFOEX))
+        SetCurrentConsoleFontEx.restype = wts.BOOL
+
+        stdout = GetStdHandle(STD_OUTPUT_HANDLE)
+        if not stdout:
+            print("{:s} error: {:d}".format(GetStdHandle.__name__, GetLastError()))
+            return
+        # Get current font characteristics
+        font = CONSOLE_FONT_INFOEX()
+        font.cbSize = cts.sizeof(CONSOLE_FONT_INFOEX)
+        res = GetCurrentConsoleFontEx(stdout, False, cts.byref(font))
+        if not res:
+            print("{:s} error: {:d}".format(GetCurrentConsoleFontEx.__name__, GetLastError()))
+            return
+        
+        # Change la hauteur de la police, la largeur suivra
+        font.dwFontSize.Y = font.dwFontSize.Y + zoom
+
+        res = SetCurrentConsoleFontEx(stdout, False, cts.byref(font))
+        if not res:
+            print("{:s} error: {:d}".format(SetCurrentConsoleFontEx.__name__, GetLastError()))
+            return
+
 else:
     # De https://gist.github.com/kgriffs/5726314
     def set_posix_echo(enabled: bool):
@@ -68,18 +130,19 @@ class Info(metaclass=EnsureSingle):
     def __init__(self):
         if sys.platform == "win32":
             # Les différents mode: https://learn.microsoft.com/fr-fr/windows/console/setconsolemode
-            ENABLE_QUICK_EDIT_MODE = 0x0040
+            # ENABLE_QUICK_EDIT_MODE = 0x0040
             ENABLE_EXTENDED_FLAGS  = 0x0080
 
             self._conin = PyConsoleScreenBufferType(
                 win32file.CreateFile("CONIN$", win32file.GENERIC_READ | win32file.GENERIC_WRITE, 
                 win32file.FILE_SHARE_WRITE, None, win32file.OPEN_ALWAYS, 0, None)
+
             )
             self._conin.SetStdHandle(win32console.STD_INPUT_HANDLE)
             
             self._conin_default_mode = self._conin.GetConsoleMode()
-            self._conin_text_mode = (self._conin_default_mode & ~ENABLE_QUICK_EDIT_MODE & ~win32console.ENABLE_PROCESSED_INPUT) | ENABLE_EXTENDED_FLAGS
-            self._conin_mouse_mode = (win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_PROCESSED_INPUT | ENABLE_EXTENDED_FLAGS) & ~win32console.ENABLE_PROCESSED_INPUT
+            self._conin_text_mode =  ENABLE_EXTENDED_FLAGS & ~win32console.ENABLE_PROCESSED_INPUT
+            self._conin_mouse_mode = (win32console.ENABLE_MOUSE_INPUT | win32console.ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS) & ~win32console.ENABLE_PROCESSED_INPUT
         else:
             self._default_tty_mode = termios.tcgetattr(0)
 
@@ -161,11 +224,12 @@ class TerminalInfoProxy(BaseProxy):
         def conin_mouse_mode(self) -> int:
             return cast(int, self._callmethod('get_conin_mouse_mode'))
 
-        def set_conin_mode(self, mode):
+        def set_conin_mode(self, mode: int):
             return self._callmethod('set_conin_mode', (mode,))
 
         def read_conin(self) -> MockPyINPUT_RECORDType:
             return cast(MockPyINPUT_RECORDType, self._callmethod('read_conin'))
+
     else:
         @property
         def tty_default_mode(self):
