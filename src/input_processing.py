@@ -8,6 +8,7 @@ if sys.platform == "win32":
     from terminal import MockPyINPUT_RECORDType
 else:
     import fcntl
+    import signal
 import os
 import terminal
 from data_types import Coord
@@ -35,7 +36,7 @@ def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
 def on_arrow(info: ArrowInfo):
     print(info, end="\n\r")
 def on_resize():
-    print(os.get_terminal_size())
+    print(os.get_terminal_size(), end="\n\r")
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: MouseClick | None) -> MouseInfo:
@@ -230,10 +231,14 @@ else:
         def __exit__(self, *_):
             fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
 
+def sigwich_handler(signum, frame):
+    on_resize()
 
 def listen_to_input(term_info: TerminalInfoProxy):
     # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
     sys.stdin = os.fdopen(0)
+
+    signal.signal(signal.SIGWINCH, sigwich_handler)
 
     # Ces valeurs seront changées à partir de la première intéraction
     previous_mouse_info: MouseInfo | None = None
