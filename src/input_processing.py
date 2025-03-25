@@ -25,19 +25,21 @@ def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
 
     # TODO : zoomer DANS la console sans l'agrandir
     if sys.platform == "win32":
+        current_term_size = os.get_terminal_size()
         if (info.char == b'=' or info.char == b'+') and info.key_flag & KeyFlags.ALT:
             scale_win_console(1)
-            on_resize()
+            on_resize(current_term_size)
         if info.char == b'-' and info.key_flag & KeyFlags.ALT:
             scale_win_console(-1)
-            on_resize()
+            on_resize(current_term_size)
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
     print(info, end="\n\r")
 
 def on_arrow(info: ArrowInfo):
     print(info, end="\n\r")
-def on_resize():
-    print(os.get_terminal_size(), end="\n\r")
+
+def on_resize(terminal_size: os.terminal_size):
+    print(terminal_size, end="\n\r")
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: MouseClick | None) -> MouseInfo:
@@ -233,13 +235,15 @@ else:
             fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
 
 def sigwich_handler(signum, frame):
-    on_resize()
+    on_resize(os.get_terminal_size())
 
 def listen_to_input(term_info: TerminalInfoProxy):
     # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
     sys.stdin = os.fdopen(0)
 
-    if sys.platform != "win32":
+    if sys.platform == "win32": # Utile uniquement dans le cas de Windows (CTRL + Scroll)
+        previouse_term_size: os.terminal_size | None = None
+    else:
         signal.signal(signal.SIGWINCH, sigwich_handler)
 
     # Ces valeurs seront changées à partir de la première intéraction
@@ -279,7 +283,10 @@ def listen_to_input(term_info: TerminalInfoProxy):
                 if moved_on_cell ^ clicked_on_cell:
                     current_mouse_info = parse_windows_mouse_event(conin_event, last_click)
             elif conin_event.EventType == win32console.WINDOW_BUFFER_SIZE_EVENT:
-                on_resize()
+                term_size = os.get_terminal_size()
+                if previouse_term_size != term_size or previouse_term_size is None:
+                    on_resize(term_size)
+                    previouse_term_size = term_size
         else:
             current_char = terminal.unix_getch()
 
