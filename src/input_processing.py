@@ -2,6 +2,7 @@
 # Auteurs : Rabta Souleymeine
 
 import sys
+
 if sys.platform == "win32":
     import win32console
     import win32con
@@ -15,10 +16,15 @@ import terminal
 from data_types import Coord
 from terminal import TerminalInfoProxy
 from input_properties import *
+from event_listers import listeners
 
-def on_mouse(info: MouseInfo):
+def mouse(info: MouseInfo):
+    for subscribed in listeners.mouse_listeners:
+        subscribed(info)
+
     print(info, end="\n\r")
-def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
+
+def key(info: KeyInfo, term_info: TerminalInfoProxy):
     if info.char == b'\x1b':
         terminal.reset(term_info)
         sys.exit(0)
@@ -28,17 +34,27 @@ def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
         current_term_size = os.get_terminal_size()
         if (info.char == b'=' or info.char == b'+') and info.key_flag & KeyFlags.ALT:
             scale_win_console(1)
-            on_resize(current_term_size)
+            resize(current_term_size)
         if info.char == b'-' and info.key_flag & KeyFlags.ALT:
             scale_win_console(-1)
-            on_resize(current_term_size)
+            resize(current_term_size)
+
+    for subscribed in listeners.key_listeners:
+        subscribed(info)
+
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
     print(info, end="\n\r")
 
-def on_arrow(info: ArrowInfo):
+def arrow(info: ArrowInfo):
+    for subscribed in listeners.arrow_listeners:
+        subscribed(info)
+
     print(info, end="\n\r")
 
-def on_resize(terminal_size: os.terminal_size):
+def resize(terminal_size: os.terminal_size):
+    for subscribed in listeners.resize_listeners:
+        subscribed(terminal_size)
+
     print(terminal_size, end="\n\r")
 
 if sys.platform == "win32":
@@ -235,7 +251,7 @@ else:
             fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
 
 def sigwich_handler(signum, frame):
-    on_resize(os.get_terminal_size())
+    resize(os.get_terminal_size())
 
 def listen_to_input(term_info: TerminalInfoProxy):
     # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
@@ -285,7 +301,7 @@ def listen_to_input(term_info: TerminalInfoProxy):
             elif conin_event.EventType == win32console.WINDOW_BUFFER_SIZE_EVENT:
                 term_size = os.get_terminal_size()
                 if previouse_term_size != term_size or previouse_term_size is None:
-                    on_resize(term_size)
+                    resize(term_size)
                     previouse_term_size = term_size
         else:
             current_char = terminal.unix_getch()
@@ -313,14 +329,14 @@ def listen_to_input(term_info: TerminalInfoProxy):
             if current_mouse_info.click is not None:
                 last_click = current_mouse_info.click
 
-            on_mouse(current_mouse_info)
+            mouse(current_mouse_info)
             current_mouse_info = None
 
         elif current_arrow_info is not None:
-            on_arrow(current_arrow_info)
+            arrow(current_arrow_info)
             current_arrow_info = None
 
         elif current_key_info is not None:
-            on_key(current_key_info, term_info)
+            key(current_key_info, term_info)
             current_key_info = None
 
