@@ -20,6 +20,7 @@ def on_key(info: KeyInfo, term_info: TerminalInfoProxy):
         terminal.reset(term_info)
         sys.exit(0)
 
+    # TODO : zoomer DANS la console sans l'agrandir
     if (info.char == b'=' or info.char == b'+') and info.key_flag & KeyFlags.ALT:
         scale_win_console(1)
         on_resize()
