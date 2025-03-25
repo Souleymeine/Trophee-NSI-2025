@@ -3,8 +3,9 @@
 
 import sys
 if sys.platform == "win32":
-    import win32console, win32con
-    import scale_win_console
+    import win32console
+    import win32con
+    from terminal import scale_win_console
     from terminal import MockPyINPUT_RECORDType
 else:
     import fcntl
@@ -238,7 +239,8 @@ def listen_to_input(term_info: TerminalInfoProxy):
     # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
     sys.stdin = os.fdopen(0)
 
-    signal.signal(signal.SIGWINCH, sigwich_handler)
+    if sys.platform != "win32":
+        signal.signal(signal.SIGWINCH, sigwich_handler)
 
     # Ces valeurs seront changées à partir de la première intéraction
     previous_mouse_info: MouseInfo | None = None
