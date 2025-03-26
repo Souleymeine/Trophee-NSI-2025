@@ -1,6 +1,6 @@
-from src.data_types import RGB, Anchor, Coord
+from data_types import RGB, Anchor, Coord
 from abc import ABC, abstractmethod
-from src.escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
+from escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
 
 
 class TUI_element(ABC):
