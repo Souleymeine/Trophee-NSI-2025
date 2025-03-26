@@ -24,9 +24,7 @@ def mouse(info: MouseInfo, event_queue: Queue):
 
 def key(info: KeyInfo, term_info: TerminalInfoProxy, event_queue: Queue):
     if info.char == b'\x1b':
-        parent_process = multiprocessing.parent_process()
-        if parent_process is not None and parent_process.pid is not None:
-            os.kill(parent_process.pid, signal.SIGTERM)
+        event_queue.put("END")
         return
 
     event_queue.put(info)
