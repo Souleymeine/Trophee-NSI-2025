@@ -3,6 +3,7 @@
 # Projet : pyscape
 # Auteurs : Rabta Souleymeine
 
+import builtins
 import multiprocessing
 import sys
 import os
@@ -21,8 +22,8 @@ if sys.platform != "win32":
 
 def clean_exit():
     terminal.reset(shared_terminal_state)
-    terminal_info_manager.shutdown()
     input_process.kill()
+    terminal_info_manager.shutdown()
 
     sys.exit(0)
 
@@ -30,25 +31,9 @@ if sys.platform != "win32":
     def sigterm_handler(signum, frame):
         clean_exit()
 
-def event_reciever():
-    # On écoute ensuite les évènements envoyé par "InputProcess"
-    # les listes mouse_listeners, key_listeners, arrow_listeners et resize_listeners sont modifiée dynamiquement dans le processus principal
-    # ailleur dans le programme par l'usage de décorateur
-    while True:
-        event_info = event_queue.get()
-        match type(event_info):
-            case input_properties.MouseInfo:
-                for listener in listeners.mouse_listeners:
-                    listener(event_info)
-            case input_properties.KeyInfo:
-                for listener in listeners.key_listeners:
-                    listener(event_info)
-            case input_properties.ArrowInfo:
-                for listener in listeners.arrow_listeners:
-                    listener(event_info)
-            case os.terminal_size:
-                for listener in listeners.resize_listeners:
-                    listener(event_info)
+# def event_reciever():
+
+#     pass
 
 
 @listeners.on_mouse
@@ -86,8 +71,27 @@ if __name__ == "__main__":
 
     input_process.start()
 
-    event_listener_thread = Thread(target=event_reciever, daemon=True)
-    event_listener_thread.start()
-    
-    input_process.join()
+    # event_listener_thread = Thread(target=event_reciever, daemon=True)
 
+    # On écoute ensuite les évènements envoyé par "InputProcess"
+    # les listes mouse_listeners, key_listeners, arrow_listeners et resize_listeners sont modifiée dynamiquement dans le processus principal
+    # ailleur dans le programme par l'usage de décorateur
+    while True:
+        event_info = event_queue.get()
+        match type(event_info):
+            case input_properties.MouseInfo:
+                for listener in listeners.mouse_listeners:
+                    listener(event_info)
+            case input_properties.KeyInfo:
+                for listener in listeners.key_listeners:
+                    listener(event_info)
+            case input_properties.ArrowInfo:
+                for listener in listeners.arrow_listeners:
+                    listener(event_info)
+            case os.terminal_size:
+                for listener in listeners.resize_listeners:
+                    listener(event_info)
+            case builtins.str:
+                if event_info == "END":
+                    clean_exit()
+                    break
