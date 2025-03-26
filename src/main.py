@@ -8,7 +8,7 @@ import multiprocessing
 import sys
 import os
 from data_types import RGB, Coord
-from escape_sequences import print_bgcolor_at
+from escape_sequences import print_bgcolor_at, print_at
 import input_processing
 import input_properties
 import terminal
@@ -44,8 +44,11 @@ def paint(info: MouseInfo):
         for x in range(-(brush_size * 2) + 1, 2*brush_size):
             for y in range(-brush_size + 1, brush_size):
                 if info.coord.x + x >= 1 and info.coord.y + y >= 1:
-                    color = RGB(0, int((info.coord.y/os.get_terminal_size().lines)*255), 0) if info.click.button == MouseButton.LEFT else RGB(0,0,0)
-                    print_bgcolor_at(color, Coord(info.coord.x + x, info.coord.y + y))
+                    if info.click.button == MouseButton.LEFT:
+                        color = RGB(0, int((info.coord.y/os.get_terminal_size().lines)*255), 0)
+                        print_bgcolor_at(color, Coord(info.coord.x + x, info.coord.y + y))
+                    else:
+                        print_at(' ', Coord(info.coord.x + x, info.coord.y + y))
 
 
 if __name__ == "__main__":
