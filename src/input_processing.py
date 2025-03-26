@@ -12,7 +12,7 @@ if sys.platform == "win32":
     from terminal import MockPyINPUT_RECORDType
 else:
     import fcntl
-    import signal
+import signal
 import os
 import terminal
 from data_types import Coord
@@ -24,9 +24,7 @@ def mouse(info: MouseInfo, event_queue: Queue):
 
 def key(info: KeyInfo, term_info: TerminalInfoProxy, event_queue: Queue):
     if info.char == b'\x1b':
-        parent_process = multiprocessing.parent_process()
-        if parent_process is not None and parent_process.pid is not None:
-            os.kill(parent_process.pid, signal.SIGTERM)
+        event_queue.put("END")
         return
 
     event_queue.put(info)
@@ -36,10 +34,10 @@ def key(info: KeyInfo, term_info: TerminalInfoProxy, event_queue: Queue):
         current_term_size = os.get_terminal_size()
         if (info.char == b'=' or info.char == b'+') and info.key_flag & KeyFlags.ALT:
             scale_win_console(1)
-            resize(current_term_size)
+            resize(current_term_size, event_queue)
         if info.char == b'-' and info.key_flag & KeyFlags.ALT:
             scale_win_console(-1)
-            resize(current_term_size)
+            resize(current_term_size, event_queue)
 
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
 
@@ -294,7 +292,7 @@ def listen_to_input(term_info: TerminalInfoProxy, event_queue: Queue):
             elif conin_event.EventType == win32console.WINDOW_BUFFER_SIZE_EVENT:
                 term_size = os.get_terminal_size()
                 if previouse_term_size != term_size or previouse_term_size is None:
-                    resize(term_size)
+                    resize(term_size, event_queue)
                     previouse_term_size = term_size
         else:
             current_char = terminal.unix_getch()
