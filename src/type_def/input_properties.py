@@ -2,7 +2,7 @@ from __future__ import annotations # Permet de référancer une classe à l'int�
 from dataclasses import dataclass
 from enum import Enum
 from enum import IntFlag
-from data_types import Coord
+from type_def.data_types import Coord
 
 
 # ========== Souris ===========

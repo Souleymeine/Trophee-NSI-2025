@@ -14,10 +14,10 @@ else:
     import fcntl
     import signal
 import os
-import terminal
-from data_types import Coord
-from terminal import TerminalInfoProxy
-from input_properties import *
+import core.terminal as terminal
+from type_def.data_types import Coord
+from core.terminal import TerminalInfoProxy
+from type_def.input_properties import *
 
 def mouse(info: MouseInfo, event_queue: Queue):
     event_queue.put(info)

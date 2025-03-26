@@ -2,10 +2,10 @@
 #Auteurs : Rabta Souleymeine
 
 from typing import Final
-from TUI_elements.box import Box
-from data_types import Alignment, HorizontalAlignment, Coord, VerticalAlignment
+from tui.elements.box import Box
+from type_def.data_types import Alignment, HorizontalAlignment, Coord, VerticalAlignment
 from escape_sequences import ANSI_Styles, cat_goto, print_styled_at, print_styled
-from utils import split_preserve
+from utils.sep_utils import split_preserve
 
 class TextArea:
     """Permet de représenter des zones de texte contenue dans un certain cadre, visible ou non."""

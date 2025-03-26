@@ -17,7 +17,7 @@ if sys.platform == "win32":
 else:
     import termios
     import tty
-from data_types import EnsureSingle
+from type_def.data_types import EnsureSingle
 from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
 from multiprocessing.managers import BaseManager, BaseProxy
 

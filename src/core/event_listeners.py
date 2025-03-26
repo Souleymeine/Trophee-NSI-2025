@@ -2,8 +2,8 @@
 from os import terminal_size
 from typing import Callable, Any
 
-from data_types import EnsureSingle
-from input_properties import ArrowInfo, KeyInfo, MouseInfo
+from type_def.data_types import EnsureSingle
+from type_def.input_properties import ArrowInfo, KeyInfo, MouseInfo
 
 class EventListenerSubscriber(metaclass=EnsureSingle):
     def __init__(self) -> None:

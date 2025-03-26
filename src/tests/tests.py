@@ -5,12 +5,12 @@ import os
 import sys
 import asyncio
 from escape_sequences import cat_bgcolor
-from data_types import RGB
+from type_def.data_types import RGB
 from typing import Final, Dict
 
 from TUI_elements.box import Box
 from TUI_elements.text_area import TextArea
-from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
+from type_def.data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
 from escape_sequences import gohome, ANSI_Styles
 
 # Tous les délais prédéfinies sont en millisecondes

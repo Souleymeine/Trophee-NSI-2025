@@ -4,8 +4,8 @@
 import warnings
 from typing import Final
 from escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
-from data_types import RGB, Anchor, Coord
-from .TUI_elements import TUI_element
+from type_def.data_types import RGB, Anchor, Coord
+from tui.TUI_elements import TUI_element
 
 # Historiquement, ces caractères ont été inventé pour afficher des bordures des 
 # éléments d'interface directement dans le terminale, à la manière de l'ASCII art.

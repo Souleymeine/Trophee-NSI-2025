@@ -6,15 +6,18 @@
 import builtins
 import sys
 import os
-from data_types import RGB, Coord
-from escape_sequences import print_bgcolor_at, print_at
-import input_processing
-import input_properties
-import terminal
-from input_properties import MouseInfo, MouseButton
-from terminal import Info, TerminalInfoManager, TerminalInfoProxy
+from type_def.data_types import RGB, Coord,Anchor,Alignment,VerticalAlignment,HorizontalAlignment
+from escape_sequences import print_bgcolor_at, print_at,ANSI_Styles
+import core.input_processing as input_processing
+import type_def.input_properties as input_properties
+import core.terminal as terminal
+from tui.elements.box import Box
+from tui.elements.text_area import TextArea
+from type_def.input_properties import MouseInfo, MouseButton
+from core.terminal import Info, TerminalInfoManager, TerminalInfoProxy
 from multiprocessing import Lock, Process, Queue
-from event_listeners import listeners
+from core.event_listeners import listeners
+
 if sys.platform != "win32":
     import signal
 
@@ -67,11 +70,15 @@ if __name__ == "__main__":
 
     input_process.start()
 
-    # event_listener_thread = Thread(target=event_reciever, daemon=True)
 
     # On écoute ensuite les évènements envoyé par "InputProcess"
     # les listes mouse_listeners, key_listeners, arrow_listeners et resize_listeners sont modifiée dynamiquement dans le processus principal
     # ailleur dans le programme par l'usage de décorateur
+
+    box = Box(Coord(1,1),Anchor.TOP_LEFT,10,10,rounded=True)
+
+    text = TextArea("Bonjour je suis fou aider moi",ANSI_Styles.BOLD,Alignment(HorizontalAlignment.CENTER,VerticalAlignment.MIDDLE),box)
+    text.draw()
     while True:
         event_info = event_queue.get()
         match type(event_info):

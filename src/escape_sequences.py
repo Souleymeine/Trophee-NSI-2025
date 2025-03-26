@@ -8,7 +8,7 @@
 
 import sys
 from enum import Enum
-from data_types import RGB, Coord
+from type_def.data_types import RGB, Coord
 from typing import Final
 
 # NOTE : On force une écriture brute dans la sortie standard 

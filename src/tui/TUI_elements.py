@@ -1,4 +1,4 @@
-from data_types import RGB, Anchor, Coord
+from type_def.data_types import RGB, Anchor, Coord
 from abc import ABC, abstractmethod
 from escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
 
