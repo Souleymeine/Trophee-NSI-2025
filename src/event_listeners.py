@@ -5,7 +5,7 @@ from typing import Callable, Any
 from data_types import EnsureSingle
 from input_properties import ArrowInfo, KeyInfo, MouseInfo
 
-class InputListenerSubscriber(metaclass=EnsureSingle):
+class EventListenerSubscriber(metaclass=EnsureSingle):
     def __init__(self) -> None:
         self.mouse_listeners:  list[Callable[[MouseInfo],     Any]] = []
         self.key_listeners:    list[Callable[[KeyInfo],       Any]] = []
@@ -24,5 +24,4 @@ class InputListenerSubscriber(metaclass=EnsureSingle):
     def on_resize(self, callback: Callable[[terminal_size], Any]):
         self.resize_listeners.append(callback)
 
-listeners = InputListenerSubscriber()
-
+listeners = EventListenerSubscriber()

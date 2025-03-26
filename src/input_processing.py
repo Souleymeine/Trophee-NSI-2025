@@ -1,6 +1,8 @@
 # Projet : pyscape
 # Auteurs : Rabta Souleymeine
 
+from multiprocessing import Queue, current_process, parent_process
+import multiprocessing
 import sys
 
 if sys.platform == "win32":
@@ -16,18 +18,18 @@ import terminal
 from data_types import Coord
 from terminal import TerminalInfoProxy
 from input_properties import *
-from event_listers import listeners
 
-def mouse(info: MouseInfo):
-    for subscribed in listeners.mouse_listeners:
-        subscribed(info)
+def mouse(info: MouseInfo, event_queue: Queue):
+    event_queue.put(info)
 
-    print(info, end="\n\r")
-
-def key(info: KeyInfo, term_info: TerminalInfoProxy):
+def key(info: KeyInfo, term_info: TerminalInfoProxy, event_queue: Queue):
     if info.char == b'\x1b':
-        terminal.reset(term_info)
-        sys.exit(0)
+        parent_process = multiprocessing.parent_process()
+        if parent_process is not None and parent_process.pid is not None:
+            os.kill(parent_process.pid, signal.SIGTERM)
+        return
+
+    event_queue.put(info)
 
     # TODO : zoomer DANS la console sans l'agrandir
     if sys.platform == "win32":
@@ -39,23 +41,13 @@ def key(info: KeyInfo, term_info: TerminalInfoProxy):
             scale_win_console(-1)
             resize(current_term_size)
 
-    for subscribed in listeners.key_listeners:
-        subscribed(info)
-
     # TODO : Créer un fichier contenant toutes les définitions de caractères spéciaux
-    print(info, end="\n\r")
 
-def arrow(info: ArrowInfo):
-    for subscribed in listeners.arrow_listeners:
-        subscribed(info)
+def arrow(info: ArrowInfo, event_queue: Queue):
+    event_queue.put(info)
 
-    print(info, end="\n\r")
-
-def resize(terminal_size: os.terminal_size):
-    for subscribed in listeners.resize_listeners:
-        subscribed(terminal_size)
-
-    print(terminal_size, end="\n\r")
+def resize(terminal_size: os.terminal_size, event_queue: Queue):
+    event_queue.put(terminal_size)
 
 if sys.platform == "win32":
     def parse_windows_mouse_event(event: MockPyINPUT_RECORDType, last_click: MouseClick | None) -> MouseInfo:
@@ -250,16 +242,17 @@ else:
         def __exit__(self, *_):
             fcntl.fcntl(self.fd, fcntl.F_SETFL, self.orig_fl)
 
-def sigwich_handler(signum, frame):
-    resize(os.get_terminal_size())
 
-def listen_to_input(term_info: TerminalInfoProxy):
+
+def listen_to_input(term_info: TerminalInfoProxy, event_queue: Queue):
     # On réouvre sys.stdin car il est automatiquement fermé lors de la création d'un nouveau processus
     sys.stdin = os.fdopen(0)
 
     if sys.platform == "win32": # Utile uniquement dans le cas de Windows (CTRL + Scroll)
         previouse_term_size: os.terminal_size | None = None
     else:
+        def sigwich_handler(signum, frame):
+            resize(os.get_terminal_size(), event_queue)
         signal.signal(signal.SIGWINCH, sigwich_handler)
 
     # Ces valeurs seront changées à partir de la première intéraction
@@ -329,14 +322,14 @@ def listen_to_input(term_info: TerminalInfoProxy):
             if current_mouse_info.click is not None:
                 last_click = current_mouse_info.click
 
-            mouse(current_mouse_info)
+            mouse(current_mouse_info, event_queue)
             current_mouse_info = None
 
         elif current_arrow_info is not None:
-            arrow(current_arrow_info)
+            arrow(current_arrow_info, event_queue)
             current_arrow_info = None
 
         elif current_key_info is not None:
-            key(current_key_info, term_info)
+            key(current_key_info, term_info, event_queue)
             current_key_info = None
 
