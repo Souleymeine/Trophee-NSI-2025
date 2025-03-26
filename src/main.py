@@ -4,7 +4,6 @@
 # Auteurs : Rabta Souleymeine
 
 import builtins
-import multiprocessing
 import sys
 import os
 from data_types import RGB, Coord
@@ -15,7 +14,6 @@ import terminal
 from input_properties import MouseInfo, MouseButton
 from terminal import Info, TerminalInfoManager, TerminalInfoProxy
 from multiprocessing import Lock, Process, Queue
-from threading import Thread
 from event_listeners import listeners
 if sys.platform != "win32":
     import signal
@@ -30,11 +28,6 @@ def clean_exit():
 if sys.platform != "win32":
     def sigterm_handler(signum, frame):
         clean_exit()
-
-# def event_reciever():
-
-#     pass
-
 
 @listeners.on_mouse
 def paint(info: MouseInfo):
