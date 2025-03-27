@@ -3,7 +3,7 @@
 
 import warnings
 from typing import Final
-from escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
+from escape_sequences import ANSI_Styles, gohome, print_at, reset_style, set_fgcolor, reset_fgcolor, set_style
 from data_types import RGB, Coord
 from tui.base import TUIElement, Positioning
 
@@ -37,9 +37,10 @@ class Box(TUIElement):
         On peut également l'afficher avec des caractères spéciaux prévus à cet effet, en choisissant sa couleur, en arrondissant les coins ou non.
         """
 
-    def __init__(self, positioning: Positioning, rounded: bool = False, color = RGB(255, 255, 255), show_anchor: bool = False,
+    def __init__(self, positioning: Positioning, rounded: bool = False, color = RGB(255, 255, 255), bold = False, show_anchor: bool = False,
                  z_index: int = 0, visible: bool = True):
         self._color = color
+        self._bold = bold
         self._rounded = rounded
         self._show_anchor = show_anchor
 
@@ -47,7 +48,7 @@ class Box(TUIElement):
 
     def render(self) -> None:
         # Ici on déterminera pour chaque cas la position du coin supérieur gauche, puisqu'il est le plus proche 
-        # de l'origine du repère. (pour rappelle, les coordonnées (0 ; 0) correspondent au coin supérieur gauche du terminal)
+        # de l'origine du repère. (pour rappelle, les coordonnées (1 ; 1) correspondent au coin supérieur gauche du terminal)
         # On pourra ensuite aller à droite ou en bas pour compléter la forme sans avoir à utiliser des boucles
         # pour remonter dans le repère avec des pas négatifs.
 
@@ -55,7 +56,8 @@ class Box(TUIElement):
 
         if self._visible:
             set_fgcolor(self._color) # Définie la couleur de text de tous les prochains caractères imprimés.
-            
+            if self._bold:
+                set_style(ANSI_Styles.BOLD)
             self.print_rows(TOP_LEFT_COORD)
             self.print_columns(TOP_LEFT_COORD)
             self.print_corners(TOP_LEFT_COORD)
@@ -66,6 +68,8 @@ class Box(TUIElement):
                 print_at('+', Coord(self._positioning.origin.x, self._positioning.origin.y))
             
             reset_fgcolor() # Rétablie la couleur du text par défaut
+            if self._bold:
+                reset_style(ANSI_Styles.BOLD)
 
     def print_rows(self, top_left_position: Coord):
         # Leur taille est égale à la largeur du bouton - 2, l'espace manquant est occupé par un coin.

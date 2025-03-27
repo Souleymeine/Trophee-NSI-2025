@@ -11,13 +11,13 @@ from utils import split_preserve
 
 class TextArea(ClickableElement):
     """Permet de représenter des zones de texte contenue dans un certain cadre, visible ou non."""
-    def __init__(self, positioning: Positioning, text: str, style: ANSI_Styles, colors_on_mouse: ColorsOnMouse, rounded=False, alignment = Align(HorizAlign.LEFT, VirtAlign.TOP),
+    def __init__(self, positioning: Positioning, text: str, style: ANSI_Styles, colors_on_mouse = ColorsOnMouse(), rounded=False, alignment = Align(HorizAlign.LEFT, VirtAlign.TOP), bold_border = True,
                  z_index: int = 0, visible: bool = True):
         self._text = text
         self._style = style
         self._colors_on_mouse = colors_on_mouse
         self._alignment = alignment
-        self._box = Box(positioning, visible=visible, rounded=rounded)
+        self._box = Box(positioning, visible=visible, rounded=rounded, bold=bold_border)
         super().__init__(positioning, colors_on_mouse, z_index, visible)
 
     def _on_hover(self, info: MouseInfo):
