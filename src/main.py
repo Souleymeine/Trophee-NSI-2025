@@ -10,6 +10,7 @@ import input_processing
 import input_properties
 import terminal
 from terminal import Info, TerminalInfoManager, TerminalInfoProxy
+from modules.start_menu import start_menu
 from multiprocessing import Process, Queue
 from event_listeners import listeners
 if sys.platform != "win32":
@@ -62,6 +63,8 @@ if __name__ == "__main__":
     terminal.init(shared_terminal_state)
 
     input_process.start()
+
+    start_menu()
 
     main()
 
