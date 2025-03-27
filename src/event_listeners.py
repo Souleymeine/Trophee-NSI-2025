@@ -1,33 +1,32 @@
 # from multiprocessing.managers import BaseManager, BaseProxy
+from dataclasses import dataclass
 from os import terminal_size
-from typing import Callable, Any, Self
+from typing import Callable, Any
 
+from TUI_elements.TUI_element import TUIElement
 from data_types import EnsureSingle
 from input_properties import ArrowInfo, KeyInfo, MouseInfo
 
+@dataclass
+class TUIElementMouseCallbacks:
+    on_hover: Callable[[MouseInfo], Any]
+    on_exit: Callable[[MouseInfo], Any]
+    on_click: Callable[[MouseInfo], Any]
+
 class EventListenerSubscriber(metaclass=EnsureSingle):
     def __init__(self) -> None:
-        self.object_mouse_listeners:  list[Callable[[Self | MouseInfo],     Any]] = []
-        self.object_key_listeners:    list[Callable[[Self | KeyInfo],       Any]] = []
-        self.object_arrow_listeners:  list[Callable[[Self | ArrowInfo],     Any]] = []
-        self.object_resize_listeners: list[Callable[[Self | terminal_size], Any]] = []
+        self.mouse_listeners:  dict[TUIElement, TUIElementMouseCallbacks] = {}
+        self.key_listeners:    dict[TUIElement, Callable[[KeyInfo],           Any]] = {}
+        self.arrow_listeners:  dict[TUIElement, Callable[[ArrowInfo],         Any]] = {}
+        self.resize_listeners: dict[TUIElement, Callable[[terminal_size],     Any]] = {}
 
-        self.mouse_listeners:  list[Callable[[MouseInfo],     Any]] = []
-        self.key_listeners:    list[Callable[[KeyInfo],       Any]] = []
-        self.arrow_listeners:  list[Callable[[ArrowInfo],     Any]] = []
-        self.resize_listeners: list[Callable[[terminal_size], Any]] = []
-
-    # TODO : remplacer object par tui_element
-    def on_mouse(self, callback: Callable[[MouseInfo], Any]):
-        self.mouse_listeners.append(callback)
-
-    def on_key(self, callback: Callable[[KeyInfo], Any]):
-        self.key_listeners.append(callback)
-
-    def on_arrow(self, callback: Callable[[ArrowInfo], Any]):
-        self.arrow_listeners.append(callback)
-
-    def on_resize(self, callback: Callable[[terminal_size], Any]):
-        self.resize_listeners.append(callback)
+    def register_mouse_callbacks(self, obj: TUIElement, callbacks: TUIElementMouseCallbacks):
+        self.mouse_listeners[obj] = callbacks
+    def register_key(self, obj: TUIElement, callback: Callable[[KeyInfo], Any]):
+        self.key_listeners[obj] = callback
+    def register_arrow(self, obj: TUIElement, callback: Callable[[ArrowInfo], Any]):
+        self.arrow_listeners[obj] = callback
+    def register_resize(self, obj: TUIElement, callback: Callable[[terminal_size], Any]):
+        self.resize_listeners[obj] = callback
 
 listeners = EventListenerSubscriber()
