@@ -231,17 +231,17 @@ class Anchor(Enum):
     BOTTOM_LEFT  = 3,
     BOTTOM_RIGHT = 4,
 
-class HorizontalAlignment(Enum):
+class HorizAlign(Enum):
     LEFT   = 0,
     CENTER = 1,
     RIGHT  = 2
 
-class VerticalAlignment(Enum):
+class VirtAlign(Enum):
     TOP    = 0,
     MIDDLE = 1,
     BOTTOM = 2
 
 @dataclass
-class Alignment():
-    horizontal: HorizontalAlignment
-    vertical: VerticalAlignment
+class Align():
+    horizontal: HorizAlign
+    vertical: VirtAlign

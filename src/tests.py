@@ -8,9 +8,9 @@ from escape_sequences import cat_bgcolor
 from data_types import RGB
 from typing import Final, Dict
 
-from TUI_elements.box import Box
-from TUI_elements.text_area import TextArea
-from data_types import RGB, Alignment, Anchor, HorizontalAlignment, Coord, VerticalAlignment
+from tui.box import Box
+from tui.text_area import TextArea
+from data_types import RGB, Align, Anchor, HorizAlign, Coord, VirtAlign
 from escape_sequences import gohome, ANSI_Styles
 
 # Tous les délais prédéfinies sont en millisecondes
@@ -78,7 +78,7 @@ async def show_notice_test(termsize: os.terminal_size):
     notice_text_area = TextArea(
         data,
         ANSI_Styles.BOLD,
-        Alignment(HorizontalAlignment.CENTER, VerticalAlignment.MIDDLE),
+        Align(HorizAlign.CENTER, VertAlign.MIDDLE),
         Box(
             Anchor.TOP_LEFT,
             Coord(1, 1),

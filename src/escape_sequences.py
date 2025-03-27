@@ -25,7 +25,7 @@ def ctrl_seq(seq: str):
 # CSI pour "Control Sequence Introducer", nom assez explicite.
 CSI : Final[str] = "\x1B["
 
-def reset_style():
+def reset_all_style():
     """Rétablie le style (gras, italique... et/ou la couleur) par défaut du terminal."""
     ctrl_seq(f"{CSI}m")
 
@@ -87,7 +87,11 @@ def print_styled(string: str, style: ANSI_Styles):
 def print_styled_at(string: str, style: ANSI_Styles, coord: Coord):
     assert coord.x >= 1, f"x doit être supérieur ou égale à 1: {coord.x}"
     assert coord.y >= 1, f"y doit être supérieur ou égale à 1: {coord.y}"
-    print(f"{CSI}{coord.y};{coord.x}H{CSI}{style._value_}m{string}")
+    print(f"{CSI}{coord.y};{coord.x}H{CSI}{style._value_}m{string}{CSI}{style._value_+20}m")
+def set_style(style: ANSI_Styles):
+    print(f"{CSI}{style._value_}m")
+def reset_style(style: ANSI_Styles):
+    print(f"{CSI}{style._value_+(20 if style != ANSI_Styles.BOLD else 21)}m")
 
 # === Couleurs =======================================
 
@@ -101,11 +105,18 @@ def cat_bgcolor(color: RGB) -> str:
     Utile pour concaténer des séquences entières."""
     return f"{CSI}48;2;{color.r};{color.g};{color.b}m {CSI}m"
 def set_fgcolor(color: RGB):
-    """Définie une couleur de texte pour tous les prochains print jusqu'à l'appelle de 'reset_bgcolor' ou la fin d'une séquence."""
+    """Définie une couleur de texte pour tous les prochains print jusqu'à l'appelle de 'reset_fgcolor' ou la fin d'une séquence."""
     ctrl_seq(f"{CSI}38;2;{color.r};{color.g};{color.b}m")
 def reset_fgcolor():
     """Rétablie la couleur de texte par défaut du terminal si la séquence d'échappement précédante n'a pas été terminée."""
     ctrl_seq(f"{CSI}39m")
+
+def set_bgcolor(color: RGB):
+    """Définie une couleur de l'arrière plan pour tous les prochains print jusqu'à l'appelle de 'reset_bgcolor' ou la fin d'une séquence."""
+    ctrl_seq(f"{CSI}48;2;{color.r};{color.g};{color.b}m")
+def reset_bgcolor():
+    """Rétablie la couleur de l'arrière plan par défaut du terminal si la séquence d'échappement précédante n'a pas été terminée."""
+    ctrl_seq(f"{CSI}49m")
 
 def print_bgcolor_at(color: RGB, coord: Coord):
     """Identique à 'print_bgcolor' mais aux positions données au lieu de celles du curseur.

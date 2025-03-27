@@ -1,8 +1,7 @@
 # Projet : pyscape
 # Auteurs : Rabta Souleymeine
 
-from multiprocessing import Queue, current_process, parent_process
-import multiprocessing
+from multiprocessing import Queue
 import sys
 
 if sys.platform == "win32":
@@ -23,7 +22,7 @@ def mouse(info: MouseInfo, event_queue: Queue):
     event_queue.put(info)
 
 def key(info: KeyInfo, term_info: TerminalInfoProxy, event_queue: Queue):
-    if info.char == b'\x1b':
+    if info.char == b'e' and info.key_flag & KeyFlags.ALT:
         event_queue.put("END")
         return
 
