@@ -7,7 +7,7 @@ import builtins
 import sys
 import os
 from type_def.data_types import RGB, Coord,Anchor,Alignment,VerticalAlignment,HorizontalAlignment
-from escape_sequences import print_bgcolor_at, print_at,ANSI_Styles
+from escape_sequences import print_bgcolor_at, print_at,ANSI_Styles,hide_cursor
 import core.input_processing as input_processing
 import type_def.input_properties as input_properties
 import core.terminal as terminal
@@ -28,7 +28,11 @@ def clean_exit():
 
     sys.exit(0)
 
-if sys.platform != "win32":
+if sys.platform == "win32":
+    @listeners.on_resize
+    def correct_hidden_windows_cursor(info):
+        hide_cursor()
+else:
     def sigterm_handler(signum, frame):
         clean_exit()
 
