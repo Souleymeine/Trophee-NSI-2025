@@ -9,8 +9,8 @@ def manage_mouse_event(event_info: MouseInfo, listeners: EventListenerSubscriber
     for clickable_element, mouse_callbacks in list(listeners.mouse_listeners.items()):
         assert type(clickable_element) == ClickableElement
         top_left_coord = clickable_element.top_left_coord
-        horizontal_align: bool = top_left_coord.x <= event_info.coord.x <= top_left_coord.x + clickable_element.positioning.width
-        vertical_align: bool = top_left_coord.y <= event_info.coord.y <= top_left_coord.y + clickable_element.positioning.height
+        horizontal_align: bool = top_left_coord.x <= event_info.coord.x <= top_left_coord.x + clickable_element.positioning.width - 1
+        vertical_align: bool = top_left_coord.y <= event_info.coord.y <= top_left_coord.y + clickable_element.positioning.height - 1
         if horizontal_align and vertical_align:
             if event_info.click is not None:
                 mouse_callbacks.on_click(event_info)
