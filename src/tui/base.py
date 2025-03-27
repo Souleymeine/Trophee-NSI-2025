@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from types import NoneType
-from data_types import Coord, Anchor, RGB
-from input_properties import MouseInfo
-from event_listeners import listeners, MouseCallbacks
+from type_def.data_types import Coord, Anchor, RGB
+from type_def.input_properties import MouseInfo
+from core.event_listeners import listeners, MouseCallbacks
 
 @dataclass
 class Positioning:
@@ -99,7 +99,6 @@ class ColorsOnMouse:
     hover_bg_col: RGB | NoneType = None
     click_fg_col: RGB | NoneType = None
     click_bg_col: RGB | NoneType = None
-
 
 
 class ClickableElement(TUIElement):

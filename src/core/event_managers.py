@@ -1,6 +1,6 @@
 import os
-from input_properties import ArrowInfo, KeyInfo, MouseInfo
-from event_listeners import EventListenerSubscriber
+from type_def.input_properties import ArrowInfo, KeyInfo, MouseInfo
+from core.event_listeners import EventListenerSubscriber
 from tui.base import ClickableElement
 
 

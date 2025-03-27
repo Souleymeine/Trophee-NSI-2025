@@ -1,10 +1,9 @@
 #Projet : pyscape
 #Auteurs : Rabta Souleymeine
 
-import warnings
 from typing import Final
-from escape_sequences import ANSI_Styles, gohome, print_at, reset_style, set_fgcolor, reset_fgcolor, set_style
-from data_types import RGB, Coord
+from core.escape_sequences import ANSI_Styles, gohome, print_at, reset_style, set_fgcolor, reset_fgcolor, set_style
+from type_def.data_types import RGB, Coord
 from tui.base import TUIElement, Positioning
 
 # Historiquement, ces caractères ont été inventé pour afficher des bordures des 

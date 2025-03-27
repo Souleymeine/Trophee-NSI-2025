@@ -3,11 +3,11 @@
 
 from types import NoneType
 from typing import Final
-from input_properties import MouseButton, MouseInfo
+from type_def.input_properties import MouseButton, MouseInfo
 from tui.base import Positioning, ClickableElement, ColorsOnMouse
 from tui.box import Box
-from data_types import RGB, Coord
-from escape_sequences import ANSI_Styles, cat_bgcolor, goto, print_at, print_bgcolor, print_bgcolor_at, print_styled_at, reset_bgcolor, set_bgcolor
+from type_def.data_types import RGB, Coord
+from core.escape_sequences import ANSI_Styles, print_at, print_bgcolor_at, print_styled_at
 
 class Button(ClickableElement):
     """Permet de représenter des zones de texte contenue dans un certain cadre, visible ou non."""

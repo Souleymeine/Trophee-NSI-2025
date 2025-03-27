@@ -4,14 +4,14 @@
 import os
 import sys
 import asyncio
-from escape_sequences import cat_bgcolor
-from data_types import RGB
+from tui.base import Positioning
+from type_def.data_types import RGB
 from typing import Final, Dict
 
-from tui.box import Box
+
 from tui.text_area import TextArea
-from data_types import RGB, Align, Anchor, HorizAlign, Coord, VirtAlign
-from escape_sequences import gohome, ANSI_Styles
+from type_def.data_types import RGB, Align, Anchor, HorizAlign, Coord, VirtAlign
+from core.escape_sequences import gohome, ANSI_Styles, cat_bgcolor
 
 # Tous les délais prédéfinies sont en millisecondes
 
@@ -76,24 +76,15 @@ async def show_notice_test(termsize: os.terminal_size):
         data = file.read()
 
     notice_text_area = TextArea(
-        data,
+        Positioning(Coord(1, 1), Anchor.TOP_LEFT, 25, 10), data,
         ANSI_Styles.BOLD,
-        Align(HorizAlign.CENTER, VertAlign.MIDDLE),
-        Box(
-            Anchor.TOP_LEFT,
-            Coord(1, 1),
-            Coord(60, 35),
-            show=True,
-            rounded=True,
-            color=RGB(255, 100, 0),
-            show_anchor=True,
-        ),
+        alignment=Align(HorizAlign.CENTER, VirtAlign.MIDDLE),
     )
 
-    for _ in range(termsize.columns - notice_text_area.box.dimentions.x):
-        notice_text_area.box.dimentions.x += 1
-        notice_text_area.draw()
+    for _ in range(termsize.columns - notice_text_area.positioning.width):
+        notice_text_area.positioning.width += 1
+        notice_text_area.render()
         await asyncio.sleep(0.05)
         gohome()
         sys.stdout.write("\x1b[2J")
-    notice_text_area.draw()
+    notice_text_area.render()

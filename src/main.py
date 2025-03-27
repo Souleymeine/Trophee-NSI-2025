@@ -5,14 +5,17 @@
 
 import sys
 import os
-from event_managers import manage_key_event, manage_mouse_event, manage_arrow_event, manage_resize_event
-import input_processing
-import input_properties
-import terminal
-from terminal import Info, TerminalInfoManager, TerminalInfoProxy
-from modules.start_menu import start_menu
+
+import core.input_processing as input_processing
+import type_def.input_properties as input_properties
+import core.terminal as terminal
+from core.terminal import Info, TerminalInfoManager, TerminalInfoProxy
 from multiprocessing import Process, Queue
-from event_listeners import listeners
+from core.event_listeners import listeners
+from modules.start_menu import start_menu
+from core.event_managers import manage_mouse_event, manage_key_event, manage_arrow_event, manage_resize_event
+
+
 if sys.platform != "win32":
     import signal
 
@@ -64,7 +67,7 @@ if __name__ == "__main__":
 
     input_process.start()
 
+
     start_menu()
 
     main()
-

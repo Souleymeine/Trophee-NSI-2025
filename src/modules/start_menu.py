@@ -1,6 +1,6 @@
-from data_types import RGB, Anchor, Coord
-from escape_sequences import ANSI_Styles, print_at
-from input_properties import MouseButton, MouseInfo
+from type_def.data_types import RGB, Anchor, Coord
+from core.escape_sequences import ANSI_Styles, print_at
+from type_def.input_properties import MouseButton, MouseInfo
 from tui.base import ColorsOnMouse, Positioning
 from tui.button import Button
 from threading import Thread

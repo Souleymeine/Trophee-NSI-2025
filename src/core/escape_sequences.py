@@ -8,7 +8,7 @@
 
 import sys
 from enum import Enum
-from data_types import RGB, Coord
+from type_def.data_types import RGB, Coord
 from typing import Final
 
 # NOTE : On force une écriture brute dans la sortie standard 
@@ -92,6 +92,7 @@ def set_style(style: ANSI_Styles):
     print(f"{CSI}{style._value_}m")
 def reset_style(style: ANSI_Styles):
     print(f"{CSI}{style._value_+(20 if style != ANSI_Styles.BOLD else 21)}m")
+
 
 # === Couleurs =======================================
 

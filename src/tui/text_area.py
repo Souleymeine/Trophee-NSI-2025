@@ -2,12 +2,12 @@
 #Auteurs : Rabta Souleymeine
 
 from typing import Final
-from input_properties import MouseInfo
+from type_def.input_properties import MouseInfo
 from tui.base import Positioning, ClickableElement, ColorsOnMouse
 from tui.box import Box
-from data_types import Align, HorizAlign, Coord, VirtAlign
-from escape_sequences import ANSI_Styles, cat_goto, print_styled_at, print_styled
-from utils import split_preserve
+from type_def.data_types import Align, HorizAlign, Coord, VirtAlign
+from core.escape_sequences import ANSI_Styles, cat_goto, print_styled_at, print_styled
+from utils.sep_utils import split_preserve
 
 class TextArea(ClickableElement):
     """Permet de représenter des zones de texte contenue dans un certain cadre, visible ou non."""

@@ -1,8 +1,9 @@
 from dataclasses import dataclass
 from os import terminal_size
 from typing import Callable, Any
-from data_types import EnsureSingle
-from input_properties import ArrowInfo, KeyInfo, MouseInfo
+
+from type_def.data_types import EnsureSingle
+from type_def.input_properties import ArrowInfo, KeyInfo, MouseInfo
 
 @dataclass
 class MouseCallbacks:
