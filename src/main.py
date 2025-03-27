@@ -5,6 +5,7 @@
 
 import sys
 import os
+
 import core.input_processing as input_processing
 import type_def.input_properties as input_properties
 import core.terminal as terminal

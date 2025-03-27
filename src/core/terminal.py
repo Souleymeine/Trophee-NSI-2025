@@ -17,7 +17,6 @@ else:
     import tty
 from type_def.data_types import EnsureSingle
 from core.escape_sequences import gohome, hide_cursor, reset_all_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
-
 from multiprocessing.managers import BaseManager, BaseProxy
 
 
