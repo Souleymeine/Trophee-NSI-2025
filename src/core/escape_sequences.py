@@ -93,6 +93,7 @@ def set_style(style: ANSI_Styles):
 def reset_style(style: ANSI_Styles):
     print(f"{CSI}{style._value_+(20 if style != ANSI_Styles.BOLD else 21)}m")
 
+
 # === Couleurs =======================================
 
 def print_bgcolor(color: RGB):
