@@ -3,8 +3,6 @@
 
 # Ce fichier contient des fonctions et classes utilitaires liées au terminal
 
-import ctypes
-from os import get_terminal_size
 import sys
 from typing import cast
 if sys.platform == "win32":
@@ -18,7 +16,8 @@ else:
     import termios
     import tty
 from type_def.data_types import EnsureSingle
-from escape_sequences import gohome, hide_cursor, reset_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
+from core.escape_sequences import gohome, hide_cursor, reset_all_style, set_altbuf, unset_altbuf, show_cursor, xterm_mouse_tracking
+
 from multiprocessing.managers import BaseManager, BaseProxy
 
 
@@ -254,7 +253,7 @@ def init(term_info: TerminalInfoProxy):
 
 def reset(term_info: TerminalInfoProxy):
     """Rétablie l'était initial du terminal."""
-    reset_style()
+    reset_all_style()
     unset_altbuf()
     show_cursor()
     term_info.mouse_mode = False
