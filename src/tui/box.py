@@ -1,11 +1,10 @@
 #Projet : pyscape
 #Auteurs : Rabta Souleymeine
 
-import warnings
 from typing import Final
 from escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
 from data_types import RGB, Anchor, Coord
-from TUI_elements.TUI_element import TUIElement
+from tui.TUI_element import TUIElement
 
 # Historiquement, ces caractères ont été inventé pour afficher des bordures des 
 # éléments d'interface directement dans le terminale, à la manière de l'ASCII art.

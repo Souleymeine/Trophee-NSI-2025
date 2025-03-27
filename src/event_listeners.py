@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from os import terminal_size
 from typing import Callable, Any
 
-from TUI_elements.TUI_element import TUIElement
+from tui.TUI_element import TUIElement
 from data_types import EnsureSingle
 from input_properties import ArrowInfo, KeyInfo, MouseInfo
 
