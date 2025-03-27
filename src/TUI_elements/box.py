@@ -5,7 +5,7 @@ import warnings
 from typing import Final
 from escape_sequences import gohome, print_at, set_fgcolor, reset_fgcolor
 from data_types import RGB, Anchor, Coord
-from .TUI_elements import TUI_element
+from TUI_elements.TUI_element import TUIElement
 
 # Historiquement, ces caractères ont été inventé pour afficher des bordures des 
 # éléments d'interface directement dans le terminale, à la manière de l'ASCII art.
@@ -29,7 +29,7 @@ BOTTOM_RIGHT_CORNER : Final[str]       = '┘'
 
 # TODO : Traiter plus explicitement les cas limites pour les valeurs paire/impaires (décalage imprévu d'une cellule).
 
-class Box(TUI_element):
+class Box(TUIElement):
     """Classe permettant de représenter une zone rectangulaire à partir de
         - Ses coordonnées
         - Son point d'encrage (à quoi correspondent les coordonnées : centre, coin supérieur gauche/droit...)
@@ -75,7 +75,7 @@ class Box(TUI_element):
                 "Warning: L'affichage du point d'ancrage est activé mais la boîte n'est pas visible (visible = False).")
 
 
-    def on_render(self) -> None:
+    def render(self) -> None:
         # Ici on déterminera pour chaque cas la position du coin supérieur gauche, puisqu'il est le plus proche 
         # de l'origine du repère. (pour rappelle, les coordonnées (0 ; 0) correspondent au coin supérieur gauche du terminal)
         # On pourra ensuite aller à droite ou en bas pour compléter la forme sans avoir à utiliser des boucles
@@ -127,3 +127,12 @@ class Box(TUI_element):
         print_at(BOTTOM_LEFT_ROUND_CORNER if self._rounded else BOTTOM_LEFT_CORNER,   Coord(top_left_position.x, top_left_position.y + self.height - 1))
         print_at(TOP_RIGHT_ROUND_CORNER if self._rounded else TOP_RIGHT_CORNER,       Coord(top_left_position.x + self.width - 1, top_left_position.y))
         print_at(BOTTOM_RIGHT_ROUND_CORNER if self._rounded else BOTTOM_RIGHT_CORNER, Coord(top_left_position.x + self.width - 1, top_left_position.y + self.height - 1))
+
+    def on_mouse_hover(self):
+        return super().on_mouse_hover()
+    def on_render(self):
+        return super().on_render()
+    def on_mouse_click(self):
+        return super().on_mouse_click()
+    def on_mouse_exit(self):
+        return super().on_mouse_exit()
