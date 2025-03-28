@@ -21,16 +21,9 @@ Il suffit de lancer `main.py` dans le dossier `src/` avec
 
 si le chemin de python est ajouté au PATH, sinon remplacer par le chemin absolu ou relatif de python.
 
-On notera l'option -OO pour "**O**ptimization", qui pourrait être utile pour ce programme.
+Pour quitter : `ALT + E`
 
-Aucune dépendance n'est requise si ce n'est python lui-même et une machine Windows **10 à jour** (pas de version antiérieure) , Linux, MacOS, BSD ou n'importe quel autre système POSIX.
+On notera l'option -OO pour "**O**ptimization", qui s'est montrée utile pour ce programme. On peut également constater une utilisation de la mémoire réduite.
 
----
-### En cas de problème/bug,
-Envoyez un message sur le groupe dès que possible.
-
-## Notes
-Quelques fonctions de test comme un dégradé de couleur en deux dimmensions sont disponnibles.
-
-Le projet est encore assez primaire car existant depuis quelques jours seulement, d'autres éléments viendront.
-De la documentaion plus précise arrive également.
+Sur Windows, la seul dépendance est la librairie [pywin32](https://pypi.org/project/pywin32/) couplé à une version de Windows 10 datant d'après 2015.
+Une version de python ultérieur ou égale à 3.10
