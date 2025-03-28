@@ -15,9 +15,10 @@ from core.event_listeners import listeners
 from modules.exemple import exemple
 from core.event_managers import manage_mouse_event, manage_key_event, manage_arrow_event, manage_resize_event
 
-
 if sys.platform != "win32":
     import signal
+    def sigterm_handler(signum, frame):
+        clean_exit()
 
 def clean_exit():
     terminal.reset(shared_terminal_state)
@@ -25,14 +26,6 @@ def clean_exit():
     terminal_info_manager.shutdown()
 
     sys.exit(0)
-
-if sys.platform == "win32":
-    @listeners.on_resize
-    def correct_hidden_windows_cursor(info):
-        hide_cursor()
-else:
-    def sigterm_handler(signum, frame):
-        clean_exit()
 
 def main():
     # On écoute ensuite les évènements envoyé par "InputProcess"
@@ -67,7 +60,7 @@ if __name__ == "__main__":
 
     input_process.start()
 
-
+    
     exemple()
 
     main()
