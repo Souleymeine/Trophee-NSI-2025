@@ -12,6 +12,7 @@ from typing import Final, Dict
 from tui.text_area import TextArea
 from type_def.data_types import RGB, Align, Anchor, HorizAlign, Coord, VirtAlign
 from core.escape_sequences import gohome, ANSI_Styles, cat_bgcolor
+import time
 
 # Tous les délais prédéfinies sont en millisecondes
 
@@ -35,7 +36,7 @@ async def print_dialog(text : str, speed_multiplier : float = 1, newline : bool 
     if (newline):
         print()
 
-async def print_sized_dialog(text: str,  max_line_length: int, speed_multiplier: float = 1, newline: bool = True):
+def print_sized_dialog(text: str,  max_line_length: int, speed_multiplier: float = 1, newline: bool = True):
     assert max_line_length > 0, f"'max_line_length' doit être supérieur à 0 : {max_line_length}"
     current_line_length: int = 0
     
@@ -50,10 +51,10 @@ async def print_sized_dialog(text: str,  max_line_length: int, speed_multiplier:
             current_line_length = 0
         if current_line_length >= max_line_length and char == ' ':
             current_line_length = 0
-            print()
-        await asyncio.sleep((milis_delay / 1000) / speed_multiplier)
+            print(end="\n\r")
+        time.sleep((milis_delay / 1000) / speed_multiplier)
     if (newline):
-        print()
+        print(end="\n\r")
 
 # Petit test assez sympa
 def print_2d_gradient():

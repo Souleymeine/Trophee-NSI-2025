@@ -5,7 +5,7 @@ from typing import Final
 from type_def.input_properties import MouseInfo
 from tui.base import Positioning, ClickableElement, ColorsOnMouse
 from tui.box import Box
-from type_def.data_types import Align, HorizAlign, Coord, VirtAlign
+from type_def.data_types import RGB, Align, HorizAlign, Coord, VirtAlign
 from core.escape_sequences import ANSI_Styles, cat_goto, print_styled_at, print_styled
 from utils.sep_utils import split_preserve
 
@@ -17,7 +17,7 @@ class TextArea(ClickableElement):
         self._style = style
         self._colors_on_mouse = colors_on_mouse
         self._alignment = alignment
-        self._box = Box(positioning, visible=visible, rounded=rounded, bold=bold_border)
+        self._box = Box(positioning, visible=visible, rounded=rounded, bold=bold_border, color=colors_on_mouse.default_fg_col if colors_on_mouse.default_fg_col is not None else RGB(255,255,255))
         super().__init__(positioning, colors_on_mouse, z_index, visible)
 
     def _on_hover(self, info: MouseInfo):
