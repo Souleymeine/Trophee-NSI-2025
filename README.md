@@ -26,4 +26,4 @@ Pour quitter : `ALT + E`
 On notera l'option -OO pour "**O**ptimization", qui s'est montrée utile pour ce programme. On peut également constater une utilisation de la mémoire réduite.
 
 Sur Windows, la seul dépendance est la librairie [pywin32](https://pypi.org/project/pywin32/) couplé à une version de Windows 10 datant d'après 2015.
-Une version de python ultérieur ou égale à 3.10
+Une version de python ultérieur ou égale à 3.10 est requise.
