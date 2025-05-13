@@ -18,7 +18,7 @@ def click_button(info: MouseInfo):
 def print_dialog(info: MouseInfo):
     if info.click is not None and info.click.button == MouseButton.LEFT and info.click.released:
         goto(Coord(1, os.get_terminal_size().lines - 10))
-        Thread(target=print_sized_dialog, args=("Un joli text, ponctué et \"lu\" correctement. On pourrait imaginer un jeu vidéo avec un système de dialogue.", 25)).start()
+        Thread(target=print_sized_dialog, args=("Un text, \"lu\" correctement, qui respecte la ponctuation.", 25)).start()
 
 def show_text():
     print_at("Cliqué !", Coord(4, 7))
@@ -39,7 +39,8 @@ def paint(info: MouseInfo):
                         print_at(' ', Coord(info.coord.x + x, info.coord.y + y))
 
 def exemple():
-    surface = Surface(Positioning(Coord(36, 4), Anchor.TOP_LEFT, 78, 24))
+    SCALE = 1/2
+    surface = Surface(Positioning(Coord(30, 4), Anchor.TOP_LEFT, int(120 * SCALE) - 12, int(60 * SCALE) - 6))
     button = Button(
         Positioning(Coord(1, 1), Anchor.TOP_LEFT, 15, 5), "Un bouton", ANSI_Styles.ITALIC, 
         ColorsOnMouse(hover_bg_col=RGB(50, 50, 50), click_bg_col=RGB(20,20,20)),
@@ -52,9 +53,9 @@ def exemple():
         rounded=True
     )
 
-    Box(Positioning(Coord(30, 1), Anchor.TOP_LEFT, 90, 30))
+    Box( Positioning(Coord(24, 1), Anchor.TOP_LEFT, int(120 * SCALE), int(60 * SCALE)))
     
-    TextArea(Positioning(Coord(123, 3), Anchor.TOP_LEFT, 50, 21), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris vestibulum, mi in pellentesque consequat, felis tortor tincidunt odio, ac maximus neque ex at tortor. Proin et cursus tortor. Vestibulum at erat nec odio placerat commodo. Suspendisse id pretium diam. Proin consectetur justo nulla, sit amet dignissim augue rutrum ut. Etiam pharetra nisl orci, vel mollis risus euismod in. Aliquam posuere nunc arcu, at faucibus elit tristique et. Ut eu nisl vestibulum, sagittis tortor nec, malesuada ante. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.\n\nhttps://www.google.com/search?q=genere+moi+un+long+lien+pour+mon+test+merci&client=firefox-b-d&sca_esv=218665eea446f0ac&ei=gdXlZ833EOickdUP-LigyAY&ved=0+pour+mon+test+merci",
+    TextArea(Positioning(Coord(138, 3), Anchor.TOP_RIGHT, int(100 * SCALE), int(42 * SCALE)), "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Mauris vestibulum, mi in pellentesque consequat, felis tortor tincidunt odio, ac maximus neque ex at tortor. Proin et cursus tortor. Vestibulum at erat nec odio placerat commodo. Suspendisse id pretium diam. Proin consectetur justo nulla, sit amet dignissim augue rutrum ut. Etiam pharetra nisl orci, vel mollis risus euismod in. Aliquam posuere nunc arcu, at faucibus elit tristique et. Ut eu nisl vestibulum, sagittis tortor nec, malesuada ante. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus.\n\nhttps://www.google.com/search?q=genere+moi+un+long+lien+pour+mon+test+merci&client=firefox-b-d&sca_esv=218665eea446f0ac&ei=gdXlZ833EOickdUP-LigyAY&ved=0+pour+mon+test+merci",
         ANSI_Styles.ITALIC, ColorsOnMouse(default_fg_col=RGB(125, 125, 255), hover_fg_col=RGB(125, 125, 125)))
 
     surface.on_click = paint
