@@ -7,7 +7,7 @@ from tui.base import ClickableElement
 def manage_mouse_event(event_info: MouseInfo, listeners: EventListenerSubscriber):
     # Gestion basique de la souris
     for clickable_element, mouse_callbacks in list(listeners.mouse_listeners.items()):
-        assert type(clickable_element) == ClickableElement
+        assert isinstance(clickable_element,  ClickableElement)
         top_left_coord = clickable_element.top_left_coord
         horizontal_align: bool = top_left_coord.x <= event_info.coord.x <= top_left_coord.x + clickable_element.positioning.width - 1
         vertical_align: bool = top_left_coord.y <= event_info.coord.y <= top_left_coord.y + clickable_element.positioning.height - 1
